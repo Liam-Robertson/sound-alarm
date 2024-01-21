@@ -2,12 +2,14 @@ package com.extremewakeup.soundalarm.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.time.LocalTime
 
 @Entity
 data class Alarm(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val time: String, // You can also use a Date type with a TypeConverter
-    val daysSelected: String, // This could be a comma-separated string or a JSON string
+    val time: LocalTime,
+    val daysSelected: List<String>,
     val volume: Int,
-    val isActive: Boolean
+    var isActive: Boolean,
+    val userId: Int
 )
