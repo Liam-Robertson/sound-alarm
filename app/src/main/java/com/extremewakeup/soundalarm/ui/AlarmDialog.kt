@@ -72,10 +72,14 @@ fun CreateAlarmDialog(viewModel: MainViewModel, userId: Int, onDismiss: () -> Un
                 val time: LocalTime = LocalTime.parse(selectedTime, timeFormatter)
                 val alarm = Alarm(time = time, daysSelected = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"), volume = 5, isActive = true, userId = userId)
 
-                viewModel.addAlarm(
-                    alarm,
-                    onSuccess = {Toast.makeText(context, "Added alarm", Toast.LENGTH_SHORT).show()},
-                    onFailure = { error -> Toast.makeText(context, error, Toast.LENGTH_SHORT).show()})
+//                viewModel.addAlarm(
+//                    alarm,
+//                    onSuccess = {
+//                        Toast.makeText(context, "Added alarm", Toast.LENGTH_SHORT).show()
+//                        viewModel.scheduleAlarms(context)
+//                    },
+//                    onFailure = { error -> Toast.makeText(context, error, Toast.LENGTH_SHORT).show()})
+                viewModel.addAlarm(alarm)
                 onDismiss()
             }) {
                 Text("Create")

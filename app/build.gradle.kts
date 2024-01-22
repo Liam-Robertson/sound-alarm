@@ -70,8 +70,12 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation("androidx.navigation:navigation-compose:2.7.6")
-    implementation("androidx.compose.runtime:runtime-livedata:1.5.4")
     implementation("com.google.code.gson:gson:2.10")
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    // Commpose
+    implementation("androidx.compose.material:material:1.5.4")
+    implementation("androidx.compose.runtime:runtime-livedata:1.5.4")
 
     // Hilt dependencies
     implementation("com.google.dagger:hilt-android:2.50")
