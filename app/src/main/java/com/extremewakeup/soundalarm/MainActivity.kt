@@ -1,6 +1,9 @@
 package com.extremewakeup.soundalarm
 
-import android.content.Intent
+import android.app.AlarmManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -9,7 +12,6 @@ import androidx.activity.viewModels
 import com.extremewakeup.soundalarm.navigation.AppNavigation
 import com.extremewakeup.soundalarm.ui.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import android.provider.Settings
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -19,17 +21,22 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("MainActivity", "onCreate called")
-
-        if (!viewModel.isExactAlarmPermissionGranted(this)) {
-            // Navigate to system settings for the user to enable the permission
-            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-            startActivity(intent)
-        }
-
         setContent {
             AppNavigation(viewModel)
         }
-
         viewModel.scheduleAlarms(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.updatePermissionStatus(isExactAlarmPermissionGranted())
+    }
+
+    private fun isExactAlarmPermissionGranted(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+            return alarmManager?.canScheduleExactAlarms() ?: false
+        }
+        return true
     }
 }

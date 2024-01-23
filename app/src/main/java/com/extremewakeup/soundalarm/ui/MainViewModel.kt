@@ -31,6 +31,7 @@ class MainViewModel @Inject constructor(
         _permissionGranted.value = isGranted
     }
 
+
 //    fun addAlarm(alarm: Alarm, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
 //        viewModelScope.launch(Dispatchers.IO) {
 //            try {
