@@ -1,3 +1,4 @@
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -43,7 +44,7 @@ import com.extremewakeup.soundalarm.ui.NavyBlue
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun AlarmScreen(navController: NavController, viewModel: MainViewModel) {
+fun AlarmScreen(navController: NavController, viewModel: MainViewModel, context: Context) {
     val userId = 1
     val alarmList by viewModel.alarmList.observeAsState(initial = emptyList())
     var showCreateAlarmDialog by remember { mutableStateOf(false) }
@@ -78,7 +79,7 @@ fun AlarmScreen(navController: NavController, viewModel: MainViewModel) {
     }
 
     if (showCreateAlarmDialog) {
-        CreateAlarmDialog(viewModel, userId, onDismiss = {
+        CreateAlarmDialog(viewModel, context, userId, onDismiss = {
             showCreateAlarmDialog = false
             expandFirstAlarm = true
         })

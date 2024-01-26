@@ -9,7 +9,7 @@ import com.extremewakeup.soundalarm.model.Alarm
 @Dao
 interface AlarmDao {
     @Query("SELECT * FROM alarm")
-    fun getAll(): LiveData<List<Alarm>>
+    fun getAll(): List<Alarm>
 
     @Insert
     fun insert(alarm: Alarm): Long

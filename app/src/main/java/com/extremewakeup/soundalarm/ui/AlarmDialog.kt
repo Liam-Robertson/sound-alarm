@@ -1,8 +1,8 @@
 package com.extremewakeup.soundalarm.ui
 
 import android.app.TimePickerDialog
+import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
@@ -14,7 +14,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,7 +28,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateAlarmDialog(viewModel: MainViewModel, userId: Int, onDismiss: () -> Unit) {
+fun CreateAlarmDialog(viewModel: MainViewModel, context: Context, userId: Int, onDismiss: () -> Unit) {
     var timeInput by remember { mutableStateOf("") }
     val context = LocalContext.current
 
@@ -71,14 +70,6 @@ fun CreateAlarmDialog(viewModel: MainViewModel, userId: Int, onDismiss: () -> Un
                 val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
                 val time: LocalTime = LocalTime.parse(selectedTime, timeFormatter)
                 val alarm = Alarm(time = time, daysSelected = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"), volume = 5, isActive = true, userId = userId)
-
-//                viewModel.addAlarm(
-//                    alarm,
-//                    onSuccess = {
-//                        Toast.makeText(context, "Added alarm", Toast.LENGTH_SHORT).show()
-//                        viewModel.scheduleAlarms(context)
-//                    },
-//                    onFailure = { error -> Toast.makeText(context, error, Toast.LENGTH_SHORT).show()})
                 viewModel.addAlarm(alarm)
                 onDismiss()
             }) {

@@ -7,29 +7,27 @@ import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 
-class SendMessageWorker(appContext: Context, workerParams: WorkerParameters) :
-    Worker(appContext, workerParams) {
-
+class SendMessageWorker(context: Context, workerParams: WorkerParameters) : Worker(context, workerParams) {
     override fun doWork(): Result {
         return try {
-            val url = URL("http://192.168.0.29:80")
-            val httpURLConnection = url.openConnection() as HttpURLConnection
-            httpURLConnection.apply {
-                requestMethod = "POST"
-                doOutput = true
-                setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
-            }
+            val urlString = "http://192.168.0.30:80"
+            val url = URL(urlString)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "POST"
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "text/plain")
 
-            OutputStreamWriter(httpURLConnection.outputStream).use { outputStreamWriter ->
-                outputStreamWriter.write("startAlarm")
-            }
+            // Send the POST request
+            val out = OutputStreamWriter(connection.outputStream)
+            out.write("startAlarm")
+            out.close()
 
-            val responseCode = httpURLConnection.responseCode
-            httpURLConnection.disconnect()
-
+            val responseCode = connection.responseCode
             if (responseCode == HttpURLConnection.HTTP_OK) {
+                // The request was successful
                 Result.success()
             } else {
+                // The request failed
                 Result.failure()
             }
         } catch (e: Exception) {

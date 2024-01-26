@@ -1,21 +1,19 @@
 package com.extremewakeup.soundalarm.navigation
 
 import AlarmScreen
-import android.os.Build
-import androidx.annotation.RequiresApi
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.navigation.NavHostController
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.extremewakeup.soundalarm.ui.*
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.ui.platform.LocalContext
+import com.extremewakeup.soundalarm.ui.MainViewModel
+import com.extremewakeup.soundalarm.ui.PermissionScreen
 
 @Composable
-fun AppNavigation(viewModel: MainViewModel) {
+fun AppNavigation(viewModel: MainViewModel, context: Context) {
     val navController = rememberNavController()
     val permissionGranted by viewModel.permissionGranted.observeAsState(initial = false)
 
@@ -33,7 +31,7 @@ fun AppNavigation(viewModel: MainViewModel) {
 
     NavHost(navController = navController, startDestination = "permissionScreen") {
         composable("alarmScreen") {
-            AlarmScreen(navController, viewModel)
+            AlarmScreen(navController, viewModel, context)
         }
         composable("permissionScreen") {
             PermissionScreen(navController, viewModel)

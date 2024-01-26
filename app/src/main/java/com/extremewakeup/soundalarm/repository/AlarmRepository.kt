@@ -7,7 +7,7 @@ import javax.inject.Inject
 
 class AlarmRepository @Inject constructor(private val alarmDao: AlarmDao) {
 
-    fun getAlarmList(): LiveData<List<Alarm>> {
+    suspend fun getAlarmList(): List<Alarm> {
         return alarmDao.getAll()
     }
 

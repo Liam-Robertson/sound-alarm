@@ -10,25 +10,30 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.extremewakeup.soundalarm.model.Alarm
 import com.extremewakeup.soundalarm.repository.AlarmRepository
+import com.extremewakeup.soundalarm.utils.scheduleAlarms
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
-import com.extremewakeup.soundalarm.utils.scheduleAlarms
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val alarmRepository: AlarmRepository
 ) : ViewModel() {
 
-    val alarmList: LiveData<List<Alarm>> = alarmRepository.getAlarmList()
-
     private val _permissionGranted = MutableLiveData<Boolean>()
     val permissionGranted: LiveData<Boolean> = _permissionGranted
 
+    private val _alarmList = MutableLiveData<List<Alarm>>()
+    val alarmList: LiveData<List<Alarm>> = _alarmList
+
     fun updatePermissionStatus(isGranted: Boolean) {
         _permissionGranted.value = isGranted
+    }
+
+    init {
+        refreshAlarmList()
     }
 
 
@@ -51,13 +56,21 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 alarmRepository.insertAlarm(alarm)
-                // Handle success on the main thread if needed
+                refreshAlarmList()
             } catch (e: Exception) {
-                // Handle error on the main thread if needed
+                // Handle error
             }
         }
     }
 
+    private fun refreshAlarmList() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val updatedAlarms = alarmRepository.getAlarmList() // This now returns List<Alarm>
+            withContext(Dispatchers.Main) {
+                _alarmList.value = updatedAlarms
+            }
+        }
+    }
 
     fun isExactAlarmPermissionGranted(context: Context): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

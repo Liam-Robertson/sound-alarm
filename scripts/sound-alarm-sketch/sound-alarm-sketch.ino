@@ -1,4 +1,5 @@
 
+
 #include <Arduino.h>
 #include <SPIFFS.h>
 #include <FS.h>
@@ -33,7 +34,6 @@ void setup() {
     Serial.println("Failed to mount file system");
     return;
   }
-
   // List all files in SPIFFS
   Serial.println("Listing files in SPIFFS:");
   File dir = SPIFFS.open("/");
@@ -58,82 +58,74 @@ void setup() {
     }
     entry = dir.openNextFile();
   }
-
   file = new AudioFileSourceSPIFFS("/alarm.mp3");
   out = new AudioOutputI2S();
   out->SetPinout(27, 26, 25);
   mp3 = new AudioGeneratorMP3();
 }
-
-
+volatile bool startAlarm = false;
 void loop() {
-  // Check for new clients
-  WiFiClient client = server.available();
-  if (client) {
-    Serial.println("New Client.");
-    String currentLine = "";
-    boolean isBody = false;
-    String body = "";
-    boolean bodyStarted = false;
-    // Read the incoming data from the client
-    while (client.connected() && client.available()) {
-      char c = client.read();
-      Serial.write(c);
-      if (isBody) {
-        if (c == '\n' && bodyStarted) {
-          break; // End of the body, exit the loop
+    WiFiClient client = server.available();   // Listen for incoming clients
+    if (client) {
+        Serial.println("New Client.");
+        String currentLine = "";
+        boolean currentLineIsBlank = true;
+        boolean headersEnded = false;
+        String body = "";
+        bool startAlarmReceived = false;
+        while (client.connected()) {
+            if (client.available()) {
+                char c = client.read();
+                Serial.write(c);
+                if (headersEnded) {
+                    body += c;
+                    if (body.indexOf("startAlarm") >= 0) {
+                        startAlarmReceived = true;
+                        break;
+                    }
+                } else {
+                    if (c == '\n' && currentLineIsBlank) {
+                        headersEnded = true;
+                    }
+                    if (c == '\n') {
+                        currentLineIsBlank = true;
+                    } else if (c != '\r') {
+                        currentLine += c;
+                        currentLineIsBlank = false;
+                    }
+                }
+            }
         }
-        if (c != '\r' && c != '\n') {
-          body += c;
-          bodyStarted = true;
+        // Close the client connection immediately after receiving the command
+        client.println("HTTP/1.1 200 OK");
+        client.println("Content-type:text/plain");
+        client.println("Connection: close");
+        client.println();
+        client.stop();
+        Serial.println("Client Disconnected.");
+        if (startAlarmReceived) {
+            Serial.println("Start Alarm command received.");
+            // Reinitialize the audio file source
+            if (file) {
+                delete file;
+            }
+            file = new AudioFileSourceSPIFFS("/alarm.mp3");
+            // Reset or reinitialize the MP3 player before starting a new playback
+            if (mp3->isRunning()) {
+                mp3->stop();
+            }
+            // Now attempt to start playback
+            Serial.println("Starting MP3 playback...");
+            if (mp3->begin(file, out)) {
+                Serial.println("Playback started successfully.");
+            } else {
+                Serial.println("Failed to start playback.");
+                // Handle the error, possibly by reinitializing the MP3 player
+            }
         }
-      } else {
-        if (c == '\n') {
-          if (currentLine.length() == 0) {
-            isBody = true; // Headers are done, body is next
-          } else {
-            currentLine = "";
-          }
-        } else if (c != '\r') {
-          currentLine += c;
-        }
-      }
     }
-    Serial.println("Received body: " + body);
-    // Check if the body contains "startAlarm"
-    if (body.indexOf("startAlarm") >= 0) {
-      Serial.println("Start Alarm command received.");
-      if (!mp3->isRunning()) {
-        Serial.println("Starting MP3 playback...");
-        file->seek(0, SeekSet);
-        if (mp3->begin(file, out)) {
-          Serial.println("Playback started successfully.");
-        } else {
-          Serial.println("Failed to start playback.");
-        }
-      } else {
-        Serial.println("MP3 is already running.");
-      }
+    // Keep the MP3 playing
+    if (mp3->isRunning()) {
+        if (!mp3->loop()) mp3->stop();
     }
-    // Send a response to the client
-    delay(100); // Delay to ensure the request is fully received
-    if (client.connected()) {
-      Serial.println("Sending response...");
-      client.println("HTTP/1.1 200 OK");
-      client.println("Content-Type: text/plain");
-      client.println("Connection: close");
-      client.println();
-      client.println("Command received");
-      delay(500); // Longer delay to ensure the response is processed
-    }
-    client.stop();
-    Serial.println("Client Disconnected.");
-  }
-  // Handle MP3 playback
-  if (mp3->isRunning()) {
-    if (!mp3->loop()) {
-      mp3->stop();
-      Serial.println("Playback finished");
-    }
-  }
 }

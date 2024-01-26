@@ -2,7 +2,6 @@ package com.extremewakeup.soundalarm
 
 import android.app.AlarmManager
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -16,15 +15,24 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    // To do list:
+    // - Make it a https request instead of http
+    // - Delete the security config you made to bypass https and remove this line from the manifest @xml/network_security_config
+
+    // Long term to do:
+    // - Create a default alarm which is quiet wake up noises getting gradually louder then 30 seconds in it turns into a claxon
+
     private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("MainActivity", "onCreate called")
         setContent {
-            AppNavigation(viewModel)
+            AppNavigation(viewModel, this)
         }
-        viewModel.scheduleAlarms(this)
+        viewModel.alarmList.observe(this) { alarms ->
+            viewModel.scheduleAlarms(this)
+        }
     }
 
     override fun onResume() {
@@ -39,4 +47,5 @@ class MainActivity : ComponentActivity() {
         }
         return true
     }
+
 }
