@@ -67,28 +67,34 @@ volatile bool startAlarm = false;
 void loop() {
     WiFiClient client = server.available();   // Listen for incoming clients
     if (client) {
-        Serial.println("New Client.");
+        Serial.println("New Client connected.");
         String currentLine = "";
         boolean currentLineIsBlank = true;
         boolean headersEnded = false;
         String body = "";
         bool startAlarmReceived = false;
+        
         while (client.connected()) {
             if (client.available()) {
                 char c = client.read();
                 Serial.write(c);
+                
+                // Log the incoming characters and build the request body
                 if (headersEnded) {
                     body += c;
                     if (body.indexOf("startAlarm") >= 0) {
                         startAlarmReceived = true;
+                        Serial.println("Command 'startAlarm' found in request body.");
                         break;
                     }
                 } else {
                     if (c == '\n' && currentLineIsBlank) {
                         headersEnded = true;
+                        Serial.println("HTTP headers ended, reading body.");
                     }
                     if (c == '\n') {
                         currentLineIsBlank = true;
+                        currentLine = ""; // Resetting currentLine for the next line
                     } else if (c != '\r') {
                         currentLine += c;
                         currentLineIsBlank = false;
@@ -96,6 +102,7 @@ void loop() {
                 }
             }
         }
+
         // Close the client connection immediately after receiving the command
         client.println("HTTP/1.1 200 OK");
         client.println("Content-type:text/plain");
@@ -103,18 +110,21 @@ void loop() {
         client.println();
         client.stop();
         Serial.println("Client Disconnected.");
+
         if (startAlarmReceived) {
-            Serial.println("Start Alarm command received.");
+            Serial.println("Start Alarm command received. Initiating alarm sequence.");
             // Reinitialize the audio file source
             if (file) {
                 delete file;
+                file = new AudioFileSourceSPIFFS("/alarm.mp3");
             }
-            file = new AudioFileSourceSPIFFS("/alarm.mp3");
+
             // Reset or reinitialize the MP3 player before starting a new playback
             if (mp3->isRunning()) {
                 mp3->stop();
             }
-            // Now attempt to start playback
+
+            // Start playback
             Serial.println("Starting MP3 playback...");
             if (mp3->begin(file, out)) {
                 Serial.println("Playback started successfully.");
@@ -124,8 +134,12 @@ void loop() {
             }
         }
     }
+
     // Keep the MP3 playing
     if (mp3->isRunning()) {
-        if (!mp3->loop()) mp3->stop();
+        if (!mp3->loop()) {
+            mp3->stop();
+            Serial.println("MP3 playback stopped.");
+        }
     }
 }
