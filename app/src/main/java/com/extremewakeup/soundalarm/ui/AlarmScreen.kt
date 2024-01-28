@@ -41,6 +41,7 @@ import com.extremewakeup.soundalarm.ui.LighterNavyBlue
 import com.extremewakeup.soundalarm.ui.MainViewModel
 import com.extremewakeup.soundalarm.ui.MintGreen
 import com.extremewakeup.soundalarm.ui.NavyBlue
+import com.extremewakeup.soundalarm.ui.QRCodeScanner
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -50,12 +51,19 @@ fun AlarmScreen(navController: NavController, viewModel: MainViewModel, context:
     var showCreateAlarmDialog by remember { mutableStateOf(false) }
     val isConnected = true
     var expandFirstAlarm by remember { mutableStateOf(false) }
+    val isQRScannerVisible by viewModel.isQRScannerVisible.observeAsState()
 
     if (!isConnected) {
         LaunchedEffect(Unit) {
             navController.navigate("bluetoothPairingRoute") {
                 popUpTo("alarmScreenRoute") { inclusive = true }
             }
+        }
+    }
+
+    if (isQRScannerVisible == true) {
+        QRCodeScanner { qrResult ->
+            viewModel.onQRCodeScanned(qrResult)
         }
     }
 

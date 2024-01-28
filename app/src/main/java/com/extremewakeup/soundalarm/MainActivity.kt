@@ -11,6 +11,7 @@ import androidx.activity.viewModels
 import com.extremewakeup.soundalarm.navigation.AppNavigation
 import com.extremewakeup.soundalarm.ui.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.UUID
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -32,6 +33,9 @@ class MainActivity : ComponentActivity() {
         }
         viewModel.alarmList.observe(this) { alarms ->
             viewModel.scheduleAlarms(this)
+        }
+        if (intent.getBooleanExtra("showQRScanner", false)) {
+            viewModel.onAlarmTriggered()
         }
     }
 

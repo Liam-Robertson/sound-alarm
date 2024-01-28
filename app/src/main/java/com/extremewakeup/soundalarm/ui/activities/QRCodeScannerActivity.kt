@@ -37,7 +37,6 @@ fun QRCodeScanner() {
         }
     }
 
-    // Request camera permission
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted: Boolean ->
