@@ -16,6 +16,7 @@ AudioOutputI2S *out;
 
 volatile bool startAlarm = false;
 volatile bool stopAlarm = false;
+volatile bool alarmState = false; // True when alarm should be playing
 
 void setup() {
     Serial.begin(115200);
@@ -70,36 +71,27 @@ void setup() {
 
 void loop() {
     WiFiClient client = server.available();   // Listen for incoming clients
+
     if (client) {
         Serial.println("New Client.");
         String currentLine = "";
         boolean currentLineIsBlank = true;
         boolean headersEnded = false;
         String body = "";
+
         while (client.connected()) {
             if (client.available()) {
                 char c = client.read();
                 Serial.write(c);
+
                 if (headersEnded) {
                     body += c;
                     if (body.indexOf("startAlarm") >= 0) {
-                        startAlarm = true;
-                        stopAlarm = false;
-                        // Reinitialize the audio file source and mp3 player
-                        if (file) {
-                            delete file;
-                            file = new AudioFileSourceSPIFFS("/alarm.mp3");
-                        }
-                        if (mp3->isRunning()) {
-                            mp3->stop();
-                            delete mp3;
-                            mp3 = new AudioGeneratorMP3();
-                        }
+                        alarmState = true;
                         break;
                     }
                     if (body.indexOf("stopAlarm") >= 0) {
-                        stopAlarm = true;
-                        startAlarm = false;
+                        alarmState = false;
                         break;
                     }
                 } else {
@@ -115,6 +107,7 @@ void loop() {
                 }
             }
         }
+
         // Close the client connection
         client.println("HTTP/1.1 200 OK");
         client.println("Content-type:text/plain");
@@ -125,20 +118,24 @@ void loop() {
     }
 
     // Control MP3 playback
-    if (startAlarm && !stopAlarm) {
+    if (alarmState) {
         if (!mp3->isRunning()) {
+            if (file) {
+                delete file;
+            }
+            file = new AudioFileSourceSPIFFS("/alarm.mp3");
             mp3->begin(file, out);
+        } else {
+            if (!mp3->loop()) {
+                mp3->stop();
+                delete file;
+                file = new AudioFileSourceSPIFFS("/alarm.mp3");
+                mp3->begin(file, out);
+            }
         }
-    } else if (stopAlarm) {
-        if (mp3->isRunning()) {
-            mp3->stop();
-        }
-    }
-
-    // Keep the MP3 playing
-    if (mp3->isRunning()) {
-        if (!mp3->loop()) {
-            mp3->stop();
-        }
+    } else if (mp3->isRunning()) {
+        mp3->stop();
+        delete file;
+        file = nullptr;
     }
 }
