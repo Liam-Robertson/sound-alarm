@@ -8,51 +8,66 @@
 
 const char *ssid = "VM6293918";     // Replace with your WiFi network name
 const char *password = "k4bHjBb8ymcf"; // Replace with your WiFi network password
+
+// Function prototypes
+void setupWiFi();
+void setupSPIFFS();
+void startServer();
+void handleClient();
+void handleMP3Playback();
+
 WiFiServer server(80);
-AudioGeneratorMP3 *mp3;
-AudioFileSourceSPIFFS *file;
-AudioOutputI2S *out;
-volatile bool startAlarm = false;
-volatile bool stopAlarm = false;
+AudioGeneratorMP3 *mp3 = nullptr;
+AudioFileSourceSPIFFS *file = nullptr;
+AudioOutputI2S *out = nullptr;
 volatile bool alarmState = false; // True when the alarm should be playing
 
 void setup() {
     Serial.begin(9600);
 
-    // Connect to WiFi network
+    setupWiFi();
+    setupSPIFFS();
+
+    file = new AudioFileSourceSPIFFS("/alarm.mp3");
+    out = new AudioOutputI2S();
+    out->SetPinout(27, 26, 25);
+    mp3 = new AudioGeneratorMP3();
+}
+
+void loop() {
+    handleClient();
+    handleMP3Playback();
+}
+
+void setupWiFi() {
     Serial.println("Connecting to WiFi...");
     WiFi.begin(ssid, password);
 
-    // Wait for connection
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
     }
+
     Serial.println("");
     Serial.println("WiFi connected");
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
-
-    // Start the server
     server.begin();
+}
 
-    // Initialize SPIFFS
+void setupSPIFFS() {
     if (!SPIFFS.begin(true)) {
         Serial.println("Failed to mount file system");
         return;
     }
 
-    // List all files in SPIFFS
     Serial.println("Listing files in SPIFFS:");
     File dir = SPIFFS.open("/");
-    if (!dir) {
-        Serial.println("Failed to open directory");
+    if (!dir || !dir.isDirectory()) {
+        Serial.println("Failed to open directory or not a directory");
         return;
     }
-    if (!dir.isDirectory()) {
-        Serial.println("Not a directory");
-        return;
-    }
+
     File entry = dir.openNextFile();
     while (entry) {
         if (entry.isDirectory()) {
@@ -66,25 +81,22 @@ void setup() {
         }
         entry = dir.openNextFile();
     }
-
-    file = new AudioFileSourceSPIFFS("/alarm.mp3");
-    out = new AudioOutputI2S();
-    out->SetPinout(27, 26, 25);
-    mp3 = new AudioGeneratorMP3();
 }
 
-void loop() {
-    WiFiClient client = server.available();   // Listen for incoming clients
+void handleClient() {
+    WiFiClient client = server.available();
     if (client) {
         Serial.println("New Client.");
         String currentLine = "";
         boolean currentLineIsBlank = true;
         boolean headersEnded = false;
         String body = "";
+
         while (client.connected()) {
             if (client.available()) {
                 char c = client.read();
                 Serial.write(c);
+
                 if (headersEnded) {
                     body += c;
                     if (body.indexOf("startAlarm") >= 0) {
@@ -108,7 +120,7 @@ void loop() {
                 }
             }
         }
-        // Close the client connection
+
         client.println("HTTP/1.1 200 OK");
         client.println("Content-type:text/plain");
         client.println("Connection: close");
@@ -116,7 +128,9 @@ void loop() {
         client.stop();
         Serial.println("Client Disconnected.");
     }
-    // Control MP3 playback
+}
+
+void handleMP3Playback() {
     if (alarmState) {
         if (!mp3->isRunning()) {
             if (file) {
