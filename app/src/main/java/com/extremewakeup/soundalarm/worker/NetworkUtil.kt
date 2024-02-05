@@ -12,7 +12,9 @@ object NetworkUtil {
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
             connection.doOutput = true
-            connection.setRequestProperty("Content-Type", "text/plain")
+            // Update Content-Type to application/json
+            connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+            connection.setRequestProperty("Accept", "application/json")
 
             connection.outputStream.use { os ->
                 val output = postBody.toByteArray(Charsets.UTF_8)

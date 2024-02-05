@@ -69,7 +69,8 @@ fun CreateAlarmDialog(viewModel: MainViewModel, context: Context, userId: Int, o
                 val selectedTime = timeInput
                 val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
                 val time: LocalTime = LocalTime.parse(selectedTime, timeFormatter)
-                val alarm = Alarm(time = time, daysSelected = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"), volume = 5, isActive = true, userId = userId)
+                val daysActive = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+                val alarm = Alarm(time = time, daysActive = daysActive, volume = 5, isActive = true, userId = userId)
                 viewModel.addAlarm(alarm)
                 onDismiss()
             }) {

@@ -137,7 +137,7 @@ fun AlarmCard(alarm: Alarm, isActive: Boolean, isExpandedInitially: Boolean, onD
                 Column {
                     Text(formattedTime, style = MaterialTheme.typography.headlineLarge)
                     Text(
-                        alarm.daysSelected.joinToString(", "),
+                        alarm.daysActive.joinToString(", "),
                         style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
                     )
                 }
@@ -157,7 +157,7 @@ fun AlarmCard(alarm: Alarm, isActive: Boolean, isExpandedInitially: Boolean, onD
             }
 
             if (isExpanded) {
-                DayPicker(alarm.daysSelected, onDayToggle)
+                DayPicker(alarm.daysActive, onDayToggle)
             }
         }
     }

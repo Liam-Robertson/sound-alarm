@@ -17,6 +17,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import org.json.JSONArray
+import org.json.JSONObject
+import java.time.LocalTime
 import java.util.UUID
 import javax.inject.Inject
 
@@ -42,31 +47,22 @@ class MainViewModel @Inject constructor(
         refreshAlarmList()
     }
 
-
-//    fun addAlarm(alarm: Alarm, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
-//        viewModelScope.launch(Dispatchers.IO) {
-//            try {
-//                alarmRepository.insertAlarm(alarm)
-//                withContext(Dispatchers.Main) {
-//                    onSuccess()
-//                }
-//            } catch (e: Exception) {
-//                withContext(Dispatchers.Main) {
-//                    onFailure(e.message ?: "Error creating user")
-//                }
-//            }
-//        }
-//    }
-
     fun addAlarm(alarm: Alarm) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 alarmRepository.insertAlarm(alarm)
                 refreshAlarmList()
+                sendAlarmToESP32(alarm)
             } catch (e: Exception) {
                 // Handle error
             }
         }
+    }
+
+    private fun sendAlarmToESP32(alarm: Alarm) {
+        val jsonString = Json.encodeToString(alarm)
+        val urlString = "http://192.168.0.30/addAlarm"
+        NetworkUtil.sendPostRequest(urlString, jsonString)
     }
 
     fun onAlarmTriggered() {
@@ -118,6 +114,28 @@ class MainViewModel @Inject constructor(
         null
     }
 
+}
+
+
+
+
+//    fun addAlarm(alarm: Alarm, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            try {
+//                alarmRepository.insertAlarm(alarm)
+//                withContext(Dispatchers.Main) {
+//                    onSuccess()
+//                }
+//            } catch (e: Exception) {
+//                withContext(Dispatchers.Main) {
+//                    onFailure(e.message ?: "Error creating user")
+//                }
+//            }
+//        }
+//    }
+
+
+
 //    fun selectDaysActive(alarm: Alarm, dayIndex: Int) {
 //        val updatedAlarms = _alarmList.value?.map { currentAlarm ->
 //            if (currentAlarm == alarm) {
@@ -136,6 +154,3 @@ class MainViewModel @Inject constructor(
 //        } ?: emptyList()
 //        _alarmList.value = updatedAlarms
 //    }
-
-
-}
