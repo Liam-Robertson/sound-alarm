@@ -8,6 +8,10 @@ import com.extremewakeup.soundalarm.model.Alarm
 
 @Dao
 interface AlarmDao {
+
+    @Query("SELECT * FROM alarms WHERE id = :alarmId")
+    suspend fun getAlarmById(alarmId: Int): Alarm?
+
     @Query("SELECT * FROM alarm")
     fun getAll(): List<Alarm>
 

@@ -12,7 +12,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
-fun scheduleAlarms(context: Context, alarmList: List<Alarm>) {
+fun scheduleAlarm(context: Context, alarmList: List<Alarm>) {
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {

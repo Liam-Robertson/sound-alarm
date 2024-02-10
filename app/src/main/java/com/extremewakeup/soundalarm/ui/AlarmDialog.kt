@@ -27,7 +27,6 @@ import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateAlarmDialog(viewModel: MainViewModel, context: Context, userId: Int, onDismiss: () -> Unit) {
     var timeInput by remember { mutableStateOf("") }

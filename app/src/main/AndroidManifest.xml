@@ -4,12 +4,10 @@
 
     <uses-permission android:name="android.permission.BLUETOOTH"/>
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
 
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
 
     <application
         android:name=".app.SoundAlarmApplication"
@@ -38,7 +36,7 @@
         <receiver android:name="com.extremewakeup.soundalarm.receiver.AlarmReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.extremewakeup.ACTION_ALARM_TRIGGER"/>
+                <action android:name="com.example.app.ACTION_SEND_BLE_MESSAGE"/>
             </intent-filter>
         </receiver>
 
