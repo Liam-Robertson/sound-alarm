@@ -9,9 +9,8 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.extremewakeup.soundalarm.ui.MainViewModel
+import com.extremewakeup.soundalarm.viewmodel.MainViewModel
 import com.extremewakeup.soundalarm.ui.PermissionScreen
-import com.extremewakeup.soundalarm.ui.QRCodeScanner
 
 @Composable
 fun AppNavigation(viewModel: MainViewModel, context: Context) {

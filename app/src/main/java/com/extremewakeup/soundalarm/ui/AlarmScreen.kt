@@ -38,7 +38,7 @@ import androidx.navigation.NavController
 import com.extremewakeup.soundalarm.model.Alarm
 import com.extremewakeup.soundalarm.ui.CreateAlarmDialog
 import com.extremewakeup.soundalarm.ui.LighterNavyBlue
-import com.extremewakeup.soundalarm.ui.MainViewModel
+import com.extremewakeup.soundalarm.viewmodel.MainViewModel
 import com.extremewakeup.soundalarm.ui.MintGreen
 import com.extremewakeup.soundalarm.ui.NavyBlue
 import com.extremewakeup.soundalarm.ui.QRCodeScanner

@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
+import com.extremewakeup.soundalarm.viewmodel.MainViewModel
 
 @Composable
 fun PermissionScreen(navController: NavHostController, viewModel: MainViewModel) {

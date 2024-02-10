@@ -1,4 +1,4 @@
-package com.extremewakeup.soundalarm.ui
+package com.extremewakeup.soundalarm.viewmodel
 
 import android.Manifest
 import android.content.Context
@@ -27,7 +27,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val alarmRepository: AlarmRepository
+    private val alarmRepository: AlarmRepository,
+    private val bluetoothRepository: BluetoothRepository
 ) : ViewModel() {
 
     private val _permissionGranted = MutableLiveData<Boolean>()
@@ -48,21 +49,14 @@ class MainViewModel @Inject constructor(
     }
 
     fun addAlarm(alarm: Alarm) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             try {
                 alarmRepository.insertAlarm(alarm)
-                refreshAlarmList()
-                sendAlarmToESP32(alarm)
+                bluetoothRepository.sendAlarmToESP32(alarm)
             } catch (e: Exception) {
-                // Handle error
+                // Handle exceptions
             }
         }
-    }
-
-    private fun sendAlarmToESP32(alarm: Alarm) {
-        val jsonString = Json.encodeToString(alarm)
-        val urlString = "http://192.168.0.30/addAlarm"
-        NetworkUtil.sendPostRequest(urlString, jsonString)
     }
 
     fun onAlarmTriggered() {
