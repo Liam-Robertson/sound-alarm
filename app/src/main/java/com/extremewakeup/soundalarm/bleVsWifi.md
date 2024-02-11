@@ -1,3 +1,8 @@
+Note: 
+- You don't want to store alarm timings in the esp32 because then the esp32 alarm could trigger when the phone was out of battery
+- This means there would be no way to turn off the alarm
+- The only thing you might ever want to store in the esp32 is timings for when wifi should go on or off
+
 - You could either have this alarm be started and stopped using bluetooth or wifi 
 - Wifi is better since it has better range and is more stable but bluetooth consumes less power and has better built in functionality 
 - In order to use wifi, you'd have to find ways to consistently turn the wifi connection on and off to conserve power while also still be able to receive messages

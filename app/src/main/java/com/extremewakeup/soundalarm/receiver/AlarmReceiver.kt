@@ -3,22 +3,22 @@ package com.extremewakeup.soundalarm.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.extremewakeup.soundalarm.viewmodel.BluetoothRepository
-import com.extremewakeup.soundalarm.viewmodel.BluetoothService
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import com.extremewakeup.soundalarm.worker.SendMessageWorker
 
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        // Extract the alarm data
-        val alarmDataJson = intent.getStringExtra("ALARM_DATA")
-        alarmDataJson?.let {
-            // Initialize BluetoothService and send the message
-            val bluetoothService = BluetoothService(context)
-            bluetoothService.sendData(it)
-        }
+        val alarmId = intent.getIntExtra("ALARM_ID", -1)
+
+        val workRequest = OneTimeWorkRequest.Builder(SendMessageWorker::class.java)
+            .setInputData(workDataOf("ALARM_ID" to alarmId))
+            .build()
+
+        WorkManager.getInstance(context).enqueue(workRequest)
     }
 }
-
-
 
 
 //class AlarmReceiver : BroadcastReceiver() {

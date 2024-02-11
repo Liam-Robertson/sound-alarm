@@ -15,4 +15,7 @@ class AlarmRepository @Inject constructor(private val alarmDao: AlarmDao) {
         alarmDao.insert(alarm)
     }
 
+    suspend fun getAlarmById(alarmId: Int): Alarm? {
+        return alarmDao.getAlarmById(alarmId)
+    }
 }

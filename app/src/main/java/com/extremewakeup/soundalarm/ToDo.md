@@ -5,6 +5,7 @@ To do list:
 - If you fail to scan the correct qr code it shouldn't navigate away from the qr code scanner, it should stay on the qr code scanner and give an error message
 
 Medium term to do:
+- Make it so that if you change the active status on the alarm, the alarm scheduler adjusts for that
 - Create a timeout so that the alarm won't go infinitely if the user loses the barcode
 - Let the user configure this timeout (but don't let them change it during the alarm time)
 - If you accidentally exit the alarm screen there needs to be a way to re-enter it. Otherwise you can't turn off alarm.
@@ -18,6 +19,7 @@ Long term to do:
 - Create a popup that says something like "If I lose this barcode I will not be able to turn off this alarm" with a checkbox saying "I understand and agree"
 - Right now the firebase server is only in Europe, create an american one and get American devices to route to that 
 - Start and stop the alarm using wifi instead of bluetooth? 
+- Remove fallbackToDestructiveMigration
 
 Bugs:
 - If you exit the barcode scanner, then you won't be able to reschedule any alarms

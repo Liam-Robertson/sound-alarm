@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
             AppNavigation(viewModel, this)
         }
         viewModel.alarmList.observe(this) { alarms ->
-            viewModel.scheduleAlarm(this)
+            viewModel.scheduleAlarms(this)
         }
         if (intent.getBooleanExtra("showQRScanner", false)) {
             viewModel.onAlarmTriggered()
