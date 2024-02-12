@@ -19,8 +19,8 @@ import javax.inject.Singleton
 object DatabaseModule {
 
     @Provides
-    fun provideBluetoothService(): BluetoothService {
-        return BluetoothService()
+    fun provideBluetoothService(@ApplicationContext context: Context): BluetoothService {
+        return BluetoothService(context)
     }
 
     @Provides

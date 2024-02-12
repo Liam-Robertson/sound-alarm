@@ -5,6 +5,7 @@ import android.app.AlarmManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -18,6 +19,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import com.extremewakeup.soundalarm.navigation.AppNavigation
+import com.extremewakeup.soundalarm.viewmodel.MainViewModel
+import dagger.hilt.android.AndroidEntryPoint
+import java.util.UUID
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -35,6 +44,13 @@ class MainViewModel @Inject constructor(
 
     private val _isQRScannerVisible = MutableLiveData<Boolean>(false)
     val isQRScannerVisible: LiveData<Boolean> = _isQRScannerVisible
+
+    private val _bluetoothPermissionGranted = MutableLiveData<Boolean>()
+    val bluetoothPermissionGranted: LiveData<Boolean> = _bluetoothPermissionGranted
+
+    fun updateBluetoothPermissionStatus(isGranted: Boolean) {
+        _bluetoothPermissionGranted.value = isGranted
+    }
 
     fun updatePermissionStatus(isGranted: Boolean) {
         _permissionGranted.value = isGranted
@@ -92,6 +108,20 @@ class MainViewModel @Inject constructor(
     fun selectDaysActive(alarm: Alarm, dayIndex: Int) {
         null
     }
+
+    fun updatePermissionsStatus(context: Context) {
+        val isExactAlarmPermissionGranted = isExactAlarmPermissionGranted(context)
+        val isBluetoothPermissionGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+        } else {
+            // Pre-Android 12 (S), BLUETOOTH_CONNECT permission is not needed.
+            true
+        }
+        Log.d("View", "alarm $isExactAlarmPermissionGranted")
+        Log.d("View", "bluetooth $isBluetoothPermissionGranted")
+        _permissionGranted.value = isExactAlarmPermissionGranted && isBluetoothPermissionGranted
+    }
+
 
 }
 

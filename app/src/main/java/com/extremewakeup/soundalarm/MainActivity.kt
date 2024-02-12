@@ -30,11 +30,12 @@ class MainActivity : ComponentActivity() {
         if (intent.getBooleanExtra("showQRScanner", false)) {
             viewModel.onAlarmTriggered()
         }
+        viewModel.updatePermissionsStatus(this)
     }
 
     override fun onResume() {
         super.onResume()
-        viewModel.updatePermissionStatus(isExactAlarmPermissionGranted())
+        viewModel.updatePermissionsStatus(this)
     }
 
     private fun isExactAlarmPermissionGranted(): Boolean {
@@ -44,5 +45,7 @@ class MainActivity : ComponentActivity() {
         }
         return true
     }
+
+
 
 }
