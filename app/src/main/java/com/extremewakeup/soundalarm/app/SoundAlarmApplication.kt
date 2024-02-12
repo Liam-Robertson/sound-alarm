@@ -1,25 +1,35 @@
 package com.extremewakeup.soundalarm.app
 
 import android.app.Application
+import android.content.Context
+import android.util.Log
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
-import dagger.hilt.EntryPoint
-import dagger.hilt.EntryPoints
-import dagger.hilt.InstallIn
+import androidx.work.ListenableWorker
+import androidx.work.WorkerFactory
+import androidx.work.WorkerParameters
+import com.extremewakeup.soundalarm.viewmodel.BluetoothService
+import com.extremewakeup.soundalarm.worker.SendMessageWorker
 import dagger.hilt.android.HiltAndroidApp
-import dagger.hilt.components.SingletonComponent
+import javax.inject.Inject
 
 @HiltAndroidApp
 class SoundAlarmApplication : Application(), Configuration.Provider {
 
-    @EntryPoint
-    @InstallIn(SingletonComponent::class)
-    interface HiltWorkerFactoryEntryPoint {
-        fun workerFactory(): HiltWorkerFactory
-    }
+    @Inject
+    lateinit var workerFactory: CustomWorkerFactory
 
-    override val workManagerConfiguration: Configuration =
-        Configuration.Builder()
-            .setWorkerFactory(EntryPoints.get(this, HiltWorkerFactoryEntryPoint::class.java).workerFactory())
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setMinimumLoggingLevel(Log.DEBUG)
+            .setWorkerFactory(workerFactory)
             .build()
+}
+
+class CustomWorkerFactory @Inject constructor(private val bluetoothService: BluetoothService) : WorkerFactory() {
+    override fun createWorker(
+        appContext: Context,
+        workerClassName: String,
+        workerParameters: WorkerParameters
+    ): ListenableWorker = SendMessageWorker(bluetoothService, appContext, workerParameters)
 }

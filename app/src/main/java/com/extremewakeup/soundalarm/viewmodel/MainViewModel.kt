@@ -49,6 +49,7 @@ class MainViewModel @Inject constructor(
             try {
                 alarmRepository.insertAlarm(alarm)
                 scheduleAlarms(context)
+                refreshAlarmList()
             } catch (e: Exception) {
                 // Handle exceptions
             }

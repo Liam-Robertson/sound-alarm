@@ -6,7 +6,7 @@ import androidx.room.TypeConverters
 import com.extremewakeup.soundalarm.dao.AlarmDao
 import com.extremewakeup.soundalarm.model.Alarm
 
-@Database(entities = [Alarm::class], version = 1, exportSchema = false)
+@Database(entities = [Alarm::class], version = 2, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun alarmDao(): AlarmDao

@@ -1,100 +1,72 @@
 #include <Arduino.h>
-#include <SPIFFS.h>
-#include <WiFi.h>
-#include <ESPAsyncWebServer.h>
-#include <ArduinoJson.h>
-#include "Audio.h"          // Make sure this header is properly defined
-#include "AlarmManager.h"   // Ensure this file is correctly implemented
+#include <BLEDevice.h>
+#include <BLEUtils.h>
+#include <BLEServer.h>
 
-const char* ssid = "VM6293918";
-const char* password = "k4bHjBb8ymcf";
+// Define the UUIDs for the service and characteristic
+#define SERVICE_UUID        "f261adff-f939-4446-82f9-2d00f4109dfe"
+#define CHARACTERISTIC_UUID "a2932117-5297-476b-96f7-a873b1075803"
 
-AsyncWebServer server(80);
-Audio audio;
+BLEServer *pServer = nullptr;
+BLECharacteristic *pCharacteristic = nullptr;
 
-volatile bool alarmState = false;
+class MyCallbacks: public BLECharacteristicCallbacks {
+    void onWrite(BLECharacteristic *pCharacteristic) {
+        std::string value = pCharacteristic->getValue();
+
+        if (value.length() > 0) {
+            Serial.println("**********");
+            Serial.print("New value: ");
+            for (int i = 0; i < value.length(); i++)
+                Serial.print(value[i]);
+
+            Serial.println();
+            Serial.println("**********");
+        }
+    }
+};
 
 void setup() {
-    Serial.begin(9600);
-    while (!Serial) { /* wait for serial port to connect */ }
+  Serial.begin(9600);
 
-    audio.init();
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-    }
-    Serial.println("WiFi Connected");
+  // Initialize BLE device
+  BLEDevice::init("ESP32_BLE_Alarm_Server");
 
-    if (!SPIFFS.begin()) {
-        Serial.println("SPIFFS Mount Failed");
-        return;
-    }
-    
-    // Load alarms from file
-    AlarmManager::loadAlarms();
-    AlarmManager::printAlarms();
+  // Create BLE server
+  pServer = BLEDevice::createServer();
 
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-        request->send(200, "text/plain", "Hello, world");
-    });
+  // Create BLE service
+  BLEService *pService = pServer->createService(SERVICE_UUID);
 
-    server.on("/toggleAlarm", HTTP_POST, [](AsyncWebServerRequest *request) {}, NULL, [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-        DynamicJsonDocument doc(1024);
-        deserializeJson(doc, (const char*)data);
-        String status = doc["status"].as<String>();
+  // Create BLE characteristic
+  pCharacteristic = pService->createCharacteristic(
+                      CHARACTERISTIC_UUID,
+                      BLECharacteristic::PROPERTY_READ |
+                      BLECharacteristic::PROPERTY_WRITE
+                    );
 
-        Serial.print("Received toggleAlarm request with status: ");
-        Serial.println(status);
+  // Assign callback to characteristic
+  pCharacteristic->setCallbacks(new MyCallbacks());
 
-        if (status == "on") {
-            alarmState = true;
-            Serial.println("Alarm state set to ON.");
-            request->send(200, "application/json", "{\"message\":\"Alarm turned on\"}");
-        } else if (status == "off") {
-            alarmState = false;
-            Serial.println("Alarm state set to OFF.");
-            request->send(200, "application/json", "{\"message\":\"Alarm turned off\"}");
-        } else {
-            Serial.println("Invalid status value received.");
-            request->send(400, "application/json", "{\"message\":\"Invalid status value\"}");
-        }
-    });
+  // Start the service
+  pService->start();
 
-    server.on("/addAlarm", HTTP_POST, [](AsyncWebServerRequest *request){}, NULL, [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-        DynamicJsonDocument doc(1024);
-        DeserializationError error = deserializeJson(doc, (const char*)data);
-        if (error) {
-            Serial.println("Failed to deserialize JSON");
-            request->send(400, "application/json", "{\"message\":\"Invalid JSON\"}");
-            return;
-        }
+  // Start advertising
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID);
+  pAdvertising->setScanResponse(true);
+  pAdvertising->setMinPreferred(0x06);  // Functions that help with iPhone connections issue
+  pAdvertising->setMinPreferred(0x12);
+  BLEDevice::startAdvertising();
 
-        File file = SPIFFS.open("/alarms.json", FILE_APPEND);
-        if (!file) {
-            Serial.println("Failed to open file for appending");
-            request->send(500, "application/json", "{\"message\":\"Failed to open file\"}");
-            return;
-        }
-
-        if (serializeJson(doc, file) == 0) {
-            Serial.println("Failed to write alarm to file");
-            request->send(500, "application/json", "{\"message\":\"Failed to write alarm\"}");
-        } else {
-            Serial.println("Alarm added");
-            request->send(200, "application/json", "{\"message\":\"Alarm added successfully\"}");
-        }
-        file.close();
-    });
-
-    server.begin();
+  Serial.println("BLE server is running");
+  Serial.print("Service UUID: ");
+  Serial.println(SERVICE_UUID);
+  Serial.print("Characteristic UUID: ");
+  Serial.println(CHARACTERISTIC_UUID);
 }
 
 void loop() {
-    if (WiFi.status() == WL_CONNECTED) {
-        // Optionally, synchronize time with NTP here
-    }
-
-    AlarmManager::checkAndTriggerAlarms(); // Updated call
-    audio.handleMP3Playback(alarmState);
-    delay(1000); // Adjust delay as needed
+  // put your main code here, to run repeatedly:
+  delay(2000); // Dummy delay, BLE operations are handled in callbacks.
 }

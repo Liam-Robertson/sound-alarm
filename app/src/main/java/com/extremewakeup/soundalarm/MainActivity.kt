@@ -11,6 +11,7 @@ import androidx.activity.viewModels
 import com.extremewakeup.soundalarm.navigation.AppNavigation
 import com.extremewakeup.soundalarm.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.UUID
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
