@@ -19,10 +19,10 @@ class AlarmReceiver : BroadcastReceiver() {
             .build()
 
         WorkManager.getInstance(context).enqueue(sendMessageRequest)
-//        val mainActivityIntent = Intent(context, MainActivity::class.java).apply {
-//            putExtra("showQRScanner", true)
-//            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-//        }
-//        context.startActivity(mainActivityIntent)
+        val mainActivityIntent = Intent(context, MainActivity::class.java).apply {
+            putExtra("showQRScanner", true)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }
+        context.startActivity(mainActivityIntent)
     }
 }

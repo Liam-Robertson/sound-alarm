@@ -15,7 +15,6 @@ BLECharacteristic *pCharacteristic = nullptr;
 volatile bool startAlarm = false;
 volatile bool stopAlarm = false;
 volatile bool alarmState = false; 
-// Audio audio; -**********
 
 AudioGeneratorMP3 *mp3;
 AudioFileSourceSPIFFS *file;
@@ -37,8 +36,11 @@ class MyCallbacks : public BLECharacteristicCallbacks {
             if (doc.containsKey("startAlarm")) {
                 Serial.println("startAlarm key found. Setting alarmState to true.");
                 alarmState = true;
+            } else if (doc.containsKey("stopAlarm")) {
+                Serial.println("stopAlarm key found. Stopping the alarm.");
+                alarmState = false;
             } else {
-                Serial.println("startAlarm key not found.");
+                Serial.println("Neither startAlarm nor stopAlarm key found.");
             }
         } else {
             Serial.println("Received BLE message is empty.");
@@ -50,7 +52,6 @@ void setup() {
     Serial.begin(9600);
     Serial.println("Initializing system...");
     SPIFFSSetup::setupSPIFFS();
-    // audio.init(); -***********
 
     BLEDevice::init("ESP32_BLE_Alarm_Server");
     Serial.println("BLE Device initialized.");

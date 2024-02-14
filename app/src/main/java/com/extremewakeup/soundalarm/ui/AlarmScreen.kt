@@ -1,4 +1,7 @@
 import android.content.Context
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +47,7 @@ import com.extremewakeup.soundalarm.ui.NavyBlue
 import com.extremewakeup.soundalarm.ui.QRCodeScanner
 import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun AlarmScreen(navController: NavController, viewModel: MainViewModel, context: Context) {
     val userId = 1
@@ -63,6 +67,7 @@ fun AlarmScreen(navController: NavController, viewModel: MainViewModel, context:
 
     if (isQRScannerVisible == true) {
         QRCodeScanner { qrResult ->
+            Log.d("QR Code Scanner", "QR Code Scanned")
             viewModel.onQRCodeScanned(qrResult)
         }
     }

@@ -1,4 +1,4 @@
-package com.extremewakeup.soundalarm.viewmodel
+package com.extremewakeup.soundalarm.bluetooth
 
 import android.os.Build
 import android.util.Log
@@ -11,7 +11,13 @@ class BluetoothRepository @Inject constructor(private val bluetoothService: Blue
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun sendAlarmToESP32(alarm: Alarm) {
         Log.d("BluetoothRepository", "Preparing to send alarm data to ESP32")
-        bluetoothService.startBleOperation(alarm)
+        bluetoothService.initiateSendAlarmDataToESP32(alarm)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun stopAlarmPlaying() {
+        Log.d("BluetoothRepository", "Preparing to send alarm data to ESP32")
+        bluetoothService.initiateStopPlayingAlarm()
     }
 
     // Any other Bluetooth operations the UI might need to trigger

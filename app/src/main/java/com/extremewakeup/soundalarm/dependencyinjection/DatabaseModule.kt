@@ -10,8 +10,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import com.extremewakeup.soundalarm.database.AppDatabase
 import com.extremewakeup.soundalarm.dao.AlarmDao
-import com.extremewakeup.soundalarm.viewmodel.BluetoothRepository
-import com.extremewakeup.soundalarm.viewmodel.BluetoothService
+import com.extremewakeup.soundalarm.bluetooth.BluetoothRepository
+import com.extremewakeup.soundalarm.bluetooth.BluetoothService
 import javax.inject.Singleton
 
 @Module

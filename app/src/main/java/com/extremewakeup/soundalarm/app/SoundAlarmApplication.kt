@@ -3,14 +3,12 @@ package com.extremewakeup.soundalarm.app
 import android.app.Application
 import android.content.Context
 import android.util.Log
-import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import com.extremewakeup.soundalarm.repository.AlarmRepository
-import com.extremewakeup.soundalarm.viewmodel.BluetoothRepository
-import com.extremewakeup.soundalarm.viewmodel.BluetoothService
+import com.extremewakeup.soundalarm.bluetooth.BluetoothRepository
 import com.extremewakeup.soundalarm.worker.SendMessageWorker
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject

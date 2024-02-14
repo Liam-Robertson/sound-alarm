@@ -8,7 +8,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.extremewakeup.soundalarm.repository.AlarmRepository
-import com.extremewakeup.soundalarm.viewmodel.BluetoothRepository
+import com.extremewakeup.soundalarm.bluetooth.BluetoothRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -32,9 +32,9 @@ class SendMessageWorker @Inject constructor(
         try {
             val alarm = alarmRepository.getAlarmById(alarmId)
             if (alarm != null) {
-                Log.d("SendMessageWorker", "Sending alarm to ESP32: ${alarm.toString()}")
+                Log.d("SendMessageWorker", "Sending alarm to ESP32: $alarm")
                 bluetoothRepository.sendAlarmToESP32(alarm)
-                Log.d("SendMessageWorker", "Alarm sent successfully to ESP32: ${alarm.toString()}")
+                Log.d("SendMessageWorker", "Alarm sent successfully to ESP32: $alarm")
                 Result.success()
             } else {
                 Log.e("SendMessageWorker", "Alarm not found")

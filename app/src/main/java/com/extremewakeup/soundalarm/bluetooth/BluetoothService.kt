@@ -1,4 +1,4 @@
-package com.extremewakeup.soundalarm.viewmodel
+package com.extremewakeup.soundalarm.bluetooth
 
 import android.Manifest
 import android.app.Activity
@@ -40,7 +40,7 @@ class BluetoothService(private val context: Context) {
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    fun startBleOperation(alarm: Alarm) {
+    fun initiateSendAlarmDataToESP32(alarm: Alarm) {
         if (!context.hasPermission(Manifest.permission.BLUETOOTH_SCAN)) {
             Log.e("BluetoothService", "BLUETOOTH_SCAN permission not granted")
             requestBluetoothScanPermission()
@@ -53,6 +53,24 @@ class BluetoothService(private val context: Context) {
         scanForDevices { device ->
             connectToDevice(device) {
                 sendAlarmDataToESP32(alarm)
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun initiateStopPlayingAlarm() {
+        if (!context.hasPermission(Manifest.permission.BLUETOOTH_SCAN)) {
+            Log.e("BluetoothService", "BLUETOOTH_SCAN permission not granted")
+            requestBluetoothScanPermission()
+            return
+        }
+        if (!context.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
+            Log.e("BluetoothService", "ACCESS_FINE_LOCATION permission not granted")
+            return
+        }
+        scanForDevices { device ->
+            connectToDevice(device) {
+                stopPlayingAlarm()
             }
         }
     }
@@ -83,6 +101,34 @@ class BluetoothService(private val context: Context) {
                     }
                 } catch (e: SecurityException) {
                     Log.e("BluetoothService", "Failed to send alarm data: ${e.message}")
+                }
+            }
+        } else {
+            Log.e("BluetoothService", "BLUETOOTH_CONNECT permission not granted")
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun stopPlayingAlarm() {
+        if (context.hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
+            val serviceUUID = UUID.fromString("f261adff-f939-4446-82f9-2d00f4109dfe")
+            val characteristicUUID = UUID.fromString("a2932117-5297-476b-96f7-a873b1075803")
+            val service = bluetoothGatt?.getService(serviceUUID) ?: throw NoSuchElementException("Bluetooth service not found")
+            val characteristic = service.getCharacteristic(characteristicUUID) ?: throw NoSuchElementException("Bluetooth characteristic not found")
+            val stopAlarmJson = "{\"stopAlarm\":true}".toByteArray(Charsets.UTF_8)
+
+            characteristic.let {
+                val writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                try {
+                    Log.d("BluetoothService", "Stopping alarm")
+                    val result = bluetoothGatt?.writeCharacteristic(it, stopAlarmJson, writeType)
+                    if (result == 1) {
+                        Log.d("BluetoothService", "Alarm stopped successfully.")
+                    } else {
+                        Log.e("BluetoothService", "Failed to stop alarm.")
+                    }
+                } catch (e: SecurityException) {
+                    Log.e("BluetoothService", "Failed to stop alarm: ${e.message}")
                 }
             }
         } else {
@@ -139,6 +185,14 @@ class BluetoothService(private val context: Context) {
                 }
             } else {
                 Log.w("BLE", "onServicesDiscovered received: $status")
+            }
+        }
+
+        override fun onCharacteristicWrite(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?, status: Int) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d("BluetoothService", "Alarm data sent successfully to ESP32.")
+            } else {
+                Log.e("BluetoothService", "Failed to send alarm data to ESP32.")
             }
         }
 
