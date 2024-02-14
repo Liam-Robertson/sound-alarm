@@ -19,6 +19,9 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.extremewakeup.soundalarm.model.Alarm
+import com.extremewakeup.soundalarm.model.AlarmTiming
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
@@ -59,7 +62,10 @@ class BluetoothService(private val context: Context) {
         if (context.hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
             val serviceUUID = UUID.fromString("f261adff-f939-4446-82f9-2d00f4109dfe")
             val characteristicUUID = UUID.fromString("a2932117-5297-476b-96f7-a873b1075803")
-            val alarmData = Json.encodeToString(Alarm.serializer(), alarm)
+            val alarmTiming = AlarmTiming(time = alarm.time, volume = alarm.volume)
+            val wrappedAlarmData = mapOf("startAlarm" to alarmTiming)
+            val alarmDataSerializer = MapSerializer(String.serializer(), AlarmTiming.serializer())
+            val alarmData = Json.encodeToString(alarmDataSerializer, wrappedAlarmData)
 
             val service = bluetoothGatt?.getService(serviceUUID) ?: throw NoSuchElementException("Bluetooth service not found")
             val characteristic = service.getCharacteristic(characteristicUUID) ?: throw NoSuchElementException("Bluetooth characteristic not found")

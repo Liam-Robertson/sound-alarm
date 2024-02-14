@@ -2,55 +2,73 @@
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEServer.h>
+#include <ArduinoJson.h>
+#include "SPIFFSSetup.h"
+#include "Audio.h"
 
-#define SERVICE_UUID        "f261adff-f939-4446-82f9-2d00f4109dfe"
+#define SERVICE_UUID "f261adff-f939-4446-82f9-2d00f4109dfe"
 #define CHARACTERISTIC_UUID "a2932117-5297-476b-96f7-a873b1075803"
 
 BLEServer *pServer = nullptr;
 BLECharacteristic *pCharacteristic = nullptr;
+volatile bool alarmState = false;
+Audio audio;
 
-class MyCallbacks: public BLECharacteristicCallbacks {
+class MyCallbacks : public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) override {
-        Serial.println("Received ble message");
+        Serial.println("Received BLE message");
         std::string value = pCharacteristic->getValue();
-
+        Serial.println("BLE message content: " + String(value.c_str()));
         if (!value.empty()) {
-            Serial.println("**********");
-            Serial.println("Alarm Received:");
-            for (char const &c: value) {
-                Serial.print(c);
+            DynamicJsonDocument doc(1024);
+            DeserializationError error = deserializeJson(doc, value.c_str());
+            if (error) {
+                Serial.print("deserializeJson() failed: ");
+                Serial.println(error.c_str());
+                return;
             }
-            Serial.println("\n**********");
+            if (doc.containsKey("startAlarm")) {
+                Serial.println("startAlarm key found. Setting alarmState to true.");
+                alarmState = true;
+            } else {
+                Serial.println("startAlarm key not found.");
+            }
+        } else {
+            Serial.println("Received BLE message is empty.");
         }
     }
 };
 
 void setup() {
-  Serial.begin(9600);
-  BLEDevice::init("ESP32_BLE_Alarm_Server");
-  pServer = BLEDevice::createServer();
-  BLEService *pService = pServer->createService(SERVICE_UUID);
-  pCharacteristic = pService->createCharacteristic(
-                      CHARACTERISTIC_UUID,
-                      BLECharacteristic::PROPERTY_READ |
-                      BLECharacteristic::PROPERTY_WRITE
-                    );
-  pCharacteristic->setCallbacks(new MyCallbacks());
-  pService->start();
-  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-  pAdvertising->addServiceUUID(SERVICE_UUID);
-  pAdvertising->setScanResponse(true);
-  pAdvertising->setMinPreferred(0x06); 
-  pAdvertising->setMinPreferred(0x12);
-  BLEDevice::startAdvertising();
+    Serial.begin(9600);
+    Serial.println("Initializing system...");
+    SPIFFSSetup::setupSPIFFS();
+    audio.init();
 
-  Serial.println("BLE server is running");
-  Serial.print("Service UUID: ");
-  Serial.println(SERVICE_UUID);
-  Serial.print("Characteristic UUID: ");
-  Serial.println(CHARACTERISTIC_UUID);
+    BLEDevice::init("ESP32_BLE_Alarm_Server");
+    Serial.println("BLE Device initialized.");
+    pServer = BLEDevice::createServer();
+    Serial.println("BLE Server created.");
+    BLEService *pService = pServer->createService(SERVICE_UUID);
+    pCharacteristic = pService->createCharacteristic(
+                        CHARACTERISTIC_UUID,
+                        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
+    pCharacteristic->setCallbacks(new MyCallbacks());
+    pService->start();
+    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+    pAdvertising->addServiceUUID(SERVICE_UUID);
+    pAdvertising->setScanResponse(true);
+    pAdvertising->setMinPreferred(0x06);
+    pAdvertising->setMinPreferred(0x12);
+    BLEDevice::startAdvertising();
+    Serial.println("BLE server is running and advertising.");
 }
 
 void loop() {
-  delay(2000);
+    if (alarmState) {
+        Serial.println("Alarm state is true, handling MP3 playback.");
+        audio.handleMP3Playback(alarmState);
+        alarmState = false; // Reset alarm state after handling
+    }
+    delay(1000); // Adjust based on your needs
 }

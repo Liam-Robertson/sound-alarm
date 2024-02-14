@@ -6,7 +6,7 @@
 #include <AudioGeneratorMP3.h>
 #include <AudioOutputI2S.h>
 #include <ArduinoJson.h>
-#include <ESPAsyncWebServer.h>
+#include <driver/i2s.h> 
 
 class Audio {
 public:
