@@ -11,8 +11,15 @@
 
 BLEServer *pServer = nullptr;
 BLECharacteristic *pCharacteristic = nullptr;
-volatile bool alarmState = false;
-Audio audio;
+
+volatile bool startAlarm = false;
+volatile bool stopAlarm = false;
+volatile bool alarmState = false; 
+// Audio audio; -**********
+
+AudioGeneratorMP3 *mp3;
+AudioFileSourceSPIFFS *file;
+AudioOutputI2S *out;
 
 class MyCallbacks : public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) override {
@@ -43,7 +50,7 @@ void setup() {
     Serial.begin(9600);
     Serial.println("Initializing system...");
     SPIFFSSetup::setupSPIFFS();
-    audio.init();
+    // audio.init(); -***********
 
     BLEDevice::init("ESP32_BLE_Alarm_Server");
     Serial.println("BLE Device initialized.");
@@ -62,13 +69,33 @@ void setup() {
     pAdvertising->setMinPreferred(0x12);
     BLEDevice::startAdvertising();
     Serial.println("BLE server is running and advertising.");
+
+
+    file = new AudioFileSourceSPIFFS("/alarm.mp3");
+    out = new AudioOutputI2S();
+    out->SetPinout(27, 26, 25);
+    mp3 = new AudioGeneratorMP3();
 }
 
 void loop() {
     if (alarmState) {
-        Serial.println("Alarm state is true, handling MP3 playback.");
-        audio.handleMP3Playback(alarmState);
-        alarmState = false; // Reset alarm state after handling
+        if (!mp3->isRunning()) {
+            if (file) {
+                delete file;
+            }
+            file = new AudioFileSourceSPIFFS("/alarm.mp3");
+            mp3->begin(file, out);
+        } else {
+            if (!mp3->loop()) {
+                mp3->stop();
+                delete file;
+                file = new AudioFileSourceSPIFFS("/alarm.mp3");
+                mp3->begin(file, out);
+            }
+        }
+    } else if (mp3->isRunning()) {
+        mp3->stop();
+        delete file;
+        file = nullptr;
     }
-    delay(1000); // Adjust based on your needs
 }
