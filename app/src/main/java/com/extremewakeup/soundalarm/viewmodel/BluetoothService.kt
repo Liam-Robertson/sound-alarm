@@ -1,7 +1,7 @@
 package com.extremewakeup.soundalarm.viewmodel
 
-
 import android.Manifest
+import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
@@ -16,21 +16,42 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.extremewakeup.soundalarm.model.Alarm
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
 class BluetoothService(private val context: Context) {
-
-
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var bluetoothGatt: BluetoothGatt? = null
+    private val serviceUUID = UUID.fromString("f261adff-f939-4446-82f9-2d00f4109dfe")
+    private val characteristicUUID = UUID.fromString("a2932117-5297-476b-96f7-a873b1075803")
 
     init {
         val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
+        if (bluetoothAdapter == null) {
+            Log.e("BluetoothService", "Device does not support Bluetooth")
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun startBleOperation(alarm: Alarm) {
+        if (!context.hasPermission(Manifest.permission.BLUETOOTH_SCAN)) {
+            Log.e("BluetoothService", "BLUETOOTH_SCAN permission not granted")
+            requestBluetoothScanPermission()
+            return
+        }
+        if (!context.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
+            Log.e("BluetoothService", "ACCESS_FINE_LOCATION permission not granted")
+            return
+        }
+        scanForDevices { device ->
+            connectToDevice(device) {
+                sendAlarmDataToESP32(alarm)
+            }
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -38,17 +59,22 @@ class BluetoothService(private val context: Context) {
         if (context.hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
             val serviceUUID = UUID.fromString("f261adff-f939-4446-82f9-2d00f4109dfe")
             val characteristicUUID = UUID.fromString("a2932117-5297-476b-96f7-a873b1075803")
-            val alarmData = Json.encodeToString(alarm)
+            val alarmData = Json.encodeToString(Alarm.serializer(), alarm)
 
-            val service = bluetoothGatt?.getService(serviceUUID)
-            val characteristic = service?.getCharacteristic(characteristicUUID)
+            val service = bluetoothGatt?.getService(serviceUUID) ?: throw NoSuchElementException("Bluetooth service not found")
+            val characteristic = service.getCharacteristic(characteristicUUID) ?: throw NoSuchElementException("Bluetooth characteristic not found")
 
-            characteristic?.let {
+            characteristic.let {
                 val writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
                 val valueToWrite = alarmData.toByteArray(Charsets.UTF_8)
                 try {
                     Log.d("BluetoothService", "Sending alarm data to ESP32: $alarmData")
-                    bluetoothGatt?.writeCharacteristic(it, valueToWrite, writeType)
+                    val result = bluetoothGatt?.writeCharacteristic(it, valueToWrite, writeType)
+                    if (result == 1) {
+                        Log.d("BluetoothService", "Alarm data sent successfully.")
+                    } else {
+                        Log.e("BluetoothService", "Failed to send alarm data.")
+                    }
                 } catch (e: SecurityException) {
                     Log.e("BluetoothService", "Failed to send alarm data: ${e.message}")
                 }
@@ -112,16 +138,28 @@ class BluetoothService(private val context: Context) {
 
     }
 
-    fun scanForDevices() {
+    private fun scanForDevices(onDeviceFound: (BluetoothDevice) -> Unit) {
         if (context.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
             try {
-                bluetoothAdapter?.bluetoothLeScanner?.startScan(object : ScanCallback() {
+                val leScanCallback = object : ScanCallback() {
                     override fun onScanResult(callbackType: Int, result: ScanResult?) {
                         super.onScanResult(callbackType, result)
-                        // Your scanning logic here
-                        Log.d("BluetoothService", "Scan result: ${result?.device?.address}")
+                        result?.device?.let { device ->
+                            // Check for the specific device, e.g., by name or UUID
+                            if (device.name == "ESP32_BLE_Alarm_Server") {
+                                bluetoothAdapter?.bluetoothLeScanner?.stopScan(this)
+                                Log.d("BluetoothService", "ESP32 device found and scanning stopped.")
+                                onDeviceFound(device)
+                            }
+                        }
                     }
-                })
+                    override fun onScanFailed(errorCode: Int) {
+                        super.onScanFailed(errorCode)
+                        Log.e("BluetoothService", "Scan failed with error code: $errorCode")
+                    }
+                }
+                bluetoothAdapter?.bluetoothLeScanner?.startScan(leScanCallback)
+                Log.d("BluetoothService", "Scanning for devices...")
             } catch (e: SecurityException) {
                 // Handle exception or notify user about needed permission
             }
@@ -131,11 +169,31 @@ class BluetoothService(private val context: Context) {
         }
     }
 
-    private fun connectToDevice(device: BluetoothDevice) {
+    private fun connectToDevice(device: BluetoothDevice, onConnected: () -> Unit) {
         if (context.hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
             try {
+                bluetoothGatt = device.connectGatt(context, false, object : BluetoothGattCallback() {
+                    override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
+                        super.onConnectionStateChange(gatt, status, newState)
+                        if (newState == BluetoothProfile.STATE_CONNECTED) {
+                            Log.d("BluetoothService", "Connected to the GATT server.")
+                            gatt?.discoverServices()
+                        } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                            Log.d("BluetoothService", "Disconnected from the GATT server.")
+                        }
+                    }
+
+                    override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+                        super.onServicesDiscovered(gatt, status)
+                        if (status == BluetoothGatt.GATT_SUCCESS) {
+                            Log.d("BluetoothService", "BLE services discovered.")
+                            onConnected()
+                        } else {
+                            Log.e("BluetoothService", "Service discovery failed with status: $status")
+                        }
+                    }
+                })
                 Log.d("BluetoothService", "Attempting to connect to device ${device.address}")
-                bluetoothGatt = device.connectGatt(context, false, gattCallback)
             } catch (e: SecurityException) {
                 // Handle the security exception or inform the user they need to grant the permission
             }
@@ -173,5 +231,18 @@ class BluetoothService(private val context: Context) {
         } else {
             // Request the permission from the user
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun requestBluetoothScanPermission() {
+        ActivityCompat.requestPermissions(
+            context as Activity,
+            arrayOf(Manifest.permission.BLUETOOTH_SCAN),
+            BLUETOOTH_SCAN_REQUEST_CODE
+        )
+    }
+
+    companion object {
+        private const val BLUETOOTH_SCAN_REQUEST_CODE = 1001
     }
 }

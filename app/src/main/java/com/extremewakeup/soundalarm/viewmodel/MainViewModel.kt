@@ -52,8 +52,34 @@ class MainViewModel @Inject constructor(
         _bluetoothPermissionGranted.value = isGranted
     }
 
-    fun updatePermissionStatus(isGranted: Boolean) {
-        _permissionGranted.value = isGranted
+//    fun updatePermissionsStatus(isGranted: Boolean) {
+//        _permissionGranted.value = isGranted
+//    }
+
+    fun updatePermissionsStatus(context: Context, isExactAlarmPermissionGranted: Boolean) {
+        val isBluetoothPermissionGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+        } else {
+            // Pre-Android 12 (S), BLUETOOTH_CONNECT permission is not needed.
+            true
+        }
+        val isBluetoothScanGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            context.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED
+        } else {
+            // Pre-Android 12 (S), BLUETOOTH_CONNECT permission is not needed.
+            true
+        }
+        val isFineLocationGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        } else {
+            // Pre-Android 12 (S), BLUETOOTH_CONNECT permission is not needed.
+            true
+        }
+        Log.d("View", "alarm $isExactAlarmPermissionGranted")
+        Log.d("View", "bluetooth $isBluetoothPermissionGranted")
+        Log.d("View", "bluetooth scan $isBluetoothScanGranted")
+        Log.d("View", "fine location $isFineLocationGranted")
+        _permissionGranted.value = isExactAlarmPermissionGranted && isBluetoothPermissionGranted && isBluetoothScanGranted && isFineLocationGranted
     }
 
     init {
@@ -109,18 +135,7 @@ class MainViewModel @Inject constructor(
         null
     }
 
-    fun updatePermissionsStatus(context: Context) {
-        val isExactAlarmPermissionGranted = isExactAlarmPermissionGranted(context)
-        val isBluetoothPermissionGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
-        } else {
-            // Pre-Android 12 (S), BLUETOOTH_CONNECT permission is not needed.
-            true
-        }
-        Log.d("View", "alarm $isExactAlarmPermissionGranted")
-        Log.d("View", "bluetooth $isBluetoothPermissionGranted")
-        _permissionGranted.value = isExactAlarmPermissionGranted && isBluetoothPermissionGranted
-    }
+
 
 
 }

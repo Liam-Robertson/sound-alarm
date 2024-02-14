@@ -2,6 +2,7 @@ package com.extremewakeup.soundalarm
 
 import android.app.AlarmManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -30,12 +31,12 @@ class MainActivity : ComponentActivity() {
         if (intent.getBooleanExtra("showQRScanner", false)) {
             viewModel.onAlarmTriggered()
         }
-        viewModel.updatePermissionsStatus(this)
+//        viewModel.updatePermissionsStatus(this)
     }
 
     override fun onResume() {
         super.onResume()
-        viewModel.updatePermissionsStatus(this)
+        viewModel.updatePermissionsStatus(this, isExactAlarmPermissionGranted())
     }
 
     private fun isExactAlarmPermissionGranted(): Boolean {
@@ -45,7 +46,6 @@ class MainActivity : ComponentActivity() {
         }
         return true
     }
-
 
 
 }

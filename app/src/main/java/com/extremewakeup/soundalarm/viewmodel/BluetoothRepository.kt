@@ -11,7 +11,7 @@ class BluetoothRepository @Inject constructor(private val bluetoothService: Blue
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun sendAlarmToESP32(alarm: Alarm) {
         Log.d("BluetoothRepository", "Preparing to send alarm data to ESP32")
-        bluetoothService.sendAlarmDataToESP32(alarm)
+        bluetoothService.startBleOperation(alarm)
     }
 
     // Any other Bluetooth operations the UI might need to trigger

@@ -46,6 +46,30 @@ fun PermissionScreen(navController: NavHostController, viewModel: MainViewModel)
         }) {
             Text("Request Bluetooth Permission")
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(onClick = {
+            Log.d("PermissionScreen", "Request Bluetooth Scan Permission button clicked")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                ActivityCompat.requestPermissions(
+                    context.findActivity(), arrayOf(Manifest.permission.BLUETOOTH_SCAN), 0)
+            }
+        }) {
+            Text("Request Bluetooth Scan Permission")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(onClick = {
+            Log.d("PermissionScreen", "Request Fine Location Permission button clicked")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                ActivityCompat.requestPermissions(
+                    context.findActivity(), arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 0)
+            }
+        }) {
+            Text("Request Fine Location Permission")
+        }
     }
 
     val permissionGranted = viewModel.permissionGranted.observeAsState().value ?: false
