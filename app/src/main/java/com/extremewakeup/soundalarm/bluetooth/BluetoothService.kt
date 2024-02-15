@@ -6,15 +6,23 @@ import com.extremewakeup.soundalarm.model.Alarm
 
 class BluetoothService(private val context: Context) {
     private val bluetoothManager = BluetoothManager(context)
-    private var isConnected = false
+    var isConnected = false
+    private var isScanningOrConnecting = false
 
     fun initiateConnection(onConnected: () -> Unit) {
+        if (isScanningOrConnecting) {
+            Log.d("BluetoothService", "initiateConnection: Already scanning or connecting")
+            return
+        }
+
+        isScanningOrConnecting = true
         Log.d("BluetoothService", "initiateConnection: Starting device scan")
         bluetoothManager.scanForDevices { device ->
             Log.d("BluetoothService", "initiateConnection: Device found, attempting connection")
             bluetoothManager.connectToDevice(device) {
                 Log.d("BluetoothService", "initiateConnection: Device connected, ready for commands")
                 isConnected = true
+                isScanningOrConnecting = false
                 onConnected()
             }
         }

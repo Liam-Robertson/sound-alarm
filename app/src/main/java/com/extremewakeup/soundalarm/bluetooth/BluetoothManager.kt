@@ -105,20 +105,20 @@ class BluetoothManager(private val context: Context) {
         }
     }
 
-//    fun stopPlayingAlarm() {
-//        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-//            Log.d("BluetoothManager", "BLUETOOTH_CONNECT permissions not granted")
-//            return
-//        }
-//        Log.d("BluetoothManager", "stopPlayingAlarm: Sending command to stop alarm")
-//        val service = bluetoothGatt?.getService(serviceUUID)
-//        val characteristic = service?.getCharacteristic(characteristicUUID)
-//        characteristic?.let {
-//            it.value = "stopAlarm".toByteArray()
-//            val writeResult = bluetoothGatt?.writeCharacteristic(it)
-//            Log.d("BluetoothManager", "stopPlayingAlarm: Command ${if (writeResult == true) "sent successfully" else "failed to send"}")
-//        }
-//    }
+    fun stopPlayingAlarm() {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            Log.d("BluetoothManager", "BLUETOOTH_CONNECT permissions not granted")
+            return
+        }
+        Log.d("BluetoothManager", "stopPlayingAlarm: Sending command to stop alarm")
+        val service = bluetoothGatt?.getService(serviceUUID)
+        val characteristic = service?.getCharacteristic(characteristicUUID)
+        characteristic?.let {
+            it.value = "stopAlarm".toByteArray()
+            val writeResult = bluetoothGatt?.writeCharacteristic(it)
+            Log.d("BluetoothManager", "stopPlayingAlarm: Command ${if (writeResult == true) "sent successfully" else "failed to send"}")
+        }
+    }
 
     fun disconnectFromDevice() {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
