@@ -8,17 +8,16 @@ import javax.inject.Inject
 
 class BluetoothRepository @Inject constructor(private val bluetoothService: BluetoothService) {
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun sendAlarmToESP32(alarm: Alarm) {
-        Log.d("BluetoothRepository", "Preparing to send alarm data to ESP32")
-        bluetoothService.initiateSendAlarmDataToESP32(alarm)
+        Log.d("BluetoothRepository", "sendAlarmToESP32: Preparing to send alarm data to ESP32")
+        bluetoothService.initiateConnection {
+            bluetoothService.sendStartAlarm(alarm)
+        }
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    fun stopAlarmPlaying() {
-        Log.d("BluetoothRepository", "Preparing to send alarm data to ESP32")
-        bluetoothService.initiateStopPlayingAlarm()
-    }
-
-    // Any other Bluetooth operations the UI might need to trigger
+//    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+//    fun stopAlarmPlaying() {
+//        Log.d("BluetoothRepository", "stopAlarmPlaying: Preparing to stop alarm on ESP32")
+//        bluetoothService.sendStopAlarm()
+//    }
 }

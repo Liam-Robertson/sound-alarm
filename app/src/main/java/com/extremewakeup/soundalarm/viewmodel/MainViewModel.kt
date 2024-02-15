@@ -74,10 +74,6 @@ class MainViewModel @Inject constructor(
             // Pre-Android 12 (S), BLUETOOTH_CONNECT permission is not needed.
             true
         }
-        Log.d("View", "alarm $isExactAlarmPermissionGranted")
-        Log.d("View", "bluetooth $isBluetoothPermissionGranted")
-        Log.d("View", "bluetooth scan $isBluetoothScanGranted")
-        Log.d("View", "fine location $isFineLocationGranted")
         _permissionGranted.value = isExactAlarmPermissionGranted && isBluetoothPermissionGranted && isBluetoothScanGranted && isFineLocationGranted
     }
 
@@ -128,7 +124,7 @@ class MainViewModel @Inject constructor(
     fun onQRCodeScanned(qrCode: String) {
         if (qrCode == "b9069d49-0956-4e34-b454-401044599906") {
             Log.d("QR Code Scanner", "Correct QR Code scanned")
-            bluetoothRepository.stopAlarmPlaying()
+//            bluetoothRepository.stopAlarmPlaying()
         }
     }
 

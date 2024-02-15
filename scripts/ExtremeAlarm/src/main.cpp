@@ -15,6 +15,7 @@ BLECharacteristic *pCharacteristic = nullptr;
 volatile bool startAlarm = false;
 volatile bool stopAlarm = false;
 volatile bool alarmState = false; 
+// Audio audio; -**********
 
 AudioGeneratorMP3 *mp3;
 AudioFileSourceSPIFFS *file;
@@ -48,10 +49,12 @@ class MyCallbacks : public BLECharacteristicCallbacks {
     }
 };
 
+
 void setup() {
     Serial.begin(9600);
     Serial.println("Initializing system...");
     SPIFFSSetup::setupSPIFFS();
+    // audio.init(); -***********
 
     BLEDevice::init("ESP32_BLE_Alarm_Server");
     Serial.println("BLE Device initialized.");

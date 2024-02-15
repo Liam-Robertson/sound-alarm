@@ -8,6 +8,7 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.extremewakeup.soundalarm.MainActivity
 import com.extremewakeup.soundalarm.worker.SendMessageWorker
+import kotlinx.coroutines.delay
 
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -19,10 +20,10 @@ class AlarmReceiver : BroadcastReceiver() {
             .build()
 
         WorkManager.getInstance(context).enqueue(sendMessageRequest)
-        val mainActivityIntent = Intent(context, MainActivity::class.java).apply {
-            putExtra("showQRScanner", true)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        }
-        context.startActivity(mainActivityIntent)
+//        val mainActivityIntent = Intent(context, MainActivity::class.java).apply {
+//            putExtra("showQRScanner", true)
+//            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+//        }
+//        context.startActivity(mainActivityIntent)
     }
 }
