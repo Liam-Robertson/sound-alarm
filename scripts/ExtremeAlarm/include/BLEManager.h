@@ -11,8 +11,7 @@ class BLEManager {
 public:
     static void init();
     static void loop();
-private:
-    static void onWrite(BLECharacteristic *pCharacteristic);
+    static void startAdvertising();
 };
 
 #endif

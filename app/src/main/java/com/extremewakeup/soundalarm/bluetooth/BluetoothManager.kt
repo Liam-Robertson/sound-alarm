@@ -114,7 +114,7 @@ class BluetoothManager(private val context: Context) {
         val service = bluetoothGatt?.getService(serviceUUID)
         val characteristic = service?.getCharacteristic(characteristicUUID)
         characteristic?.let {
-            it.value = "stopAlarm".toByteArray()
+            it.value = Json.encodeToString(MapSerializer(String.serializer(), String.serializer()), mapOf("stopAlarm" to "true")).toByteArray(Charsets.UTF_8)
             val writeResult = bluetoothGatt?.writeCharacteristic(it)
             Log.d("BluetoothManager", "stopPlayingAlarm: Command ${if (writeResult == true) "sent successfully" else "failed to send"}")
         }

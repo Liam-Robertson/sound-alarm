@@ -13,9 +13,9 @@ class BluetoothRepository @Inject constructor(private val bluetoothService: Blue
         bluetoothService.sendStartAlarm(alarm)
     }
 
-//    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-//    fun stopAlarmPlaying() {
-//        Log.d("BluetoothRepository", "stopAlarmPlaying: Preparing to stop alarm on ESP32")
-//        bluetoothService.sendStopAlarm()
-//    }
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun stopAlarmPlaying() {
+        Log.d("BluetoothRepository", "stopAlarmPlaying: Preparing to stop alarm on ESP32")
+        bluetoothService.sendStopAlarm()
+    }
 }

@@ -44,10 +44,21 @@ class BluetoothService(private val context: Context) {
         }
     }
 
-//    fun sendStopAlarm() {
-//        Log.d("BluetoothService", "sendStopAlarm: Sending stop alarm command")
-//        bluetoothManager.stopPlayingAlarm()
-//    }
+    fun sendStopAlarm() {
+        if (isConnected) {
+            Log.d("BluetoothService", "sendStopAlarm: Sending stop alarm command")
+            bluetoothManager.stopPlayingAlarm()
+        } else if (!isConnected && isScanningOrConnecting) {
+            Log.d("BluetoothService", "Bluetooth Service: is connecting")
+            sendStopAlarm()
+        }
+        else {
+            Log.d("BluetoothService", "sendStopAlarm: Device not connected, waiting for connection")
+            initiateConnection {
+                sendStopAlarm()
+            }
+        }
+    }
 
     fun disconnect() {
         Log.d("BluetoothService", "disconnect: Disconnecting from device")

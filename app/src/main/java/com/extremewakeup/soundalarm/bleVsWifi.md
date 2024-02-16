@@ -6,7 +6,8 @@ Note:
 - You could either have this alarm be started and stopped using bluetooth or wifi 
 - Wifi is better since it has better range and is more stable but bluetooth consumes less power and has better built in functionality 
 - In order to use wifi, you'd have to find ways to consistently turn the wifi connection on and off to conserve power while also still be able to receive messages
-- Right now I'm leaning towards using approach 1 in the short term and moving to approach 2 if I have range concerns
+- Right now I'm leaning towards using approach 1 in the short term and moving to approach 3 if I have range concerns
+- Approach 2 also seems viable but I need to test that 
 
 Approach 1 - Using bluetooth:
 - The simplest one - bluetooth has lots of functionality designed for this 
@@ -14,7 +15,12 @@ Approach 1 - Using bluetooth:
 - This consumes relatively little power 
 - The downside is that bluetooth is low range, especially within a house. If you went out of range you couldn't turn the alarm off
 
-Approach 2 - Mix of bluetooth and wifi: 
+Approach 2 - Using wifi only and disconnecting regularly: 
+- What if I just kept the wifi capabilities on all the time but didn't keep it constantly connected? Would that still drain battery? 
+- I feel like that's what I did before though right and it still drained a ton of battery 
+- I don't think that's what you did, I think 
+
+Approach 3 - Mix of bluetooth and wifi: 
 - There would always be a bluetooth signal to allow the user to create alarms and have them stored in the esp32
 - However the alarm being triggered on and off would be controlled by wifi 
 - When the alarm is stored in the esp32, it would also stored instructions to connect to wifi when the alarm timing is reached
@@ -27,7 +33,7 @@ Approach 2 - Mix of bluetooth and wifi:
   - This is complicated from both a code perspective and a user experience perspective
 - If you managed to do this well though it would let you have the advantages of both bluetooth and wifi while also having low power consumption
 
-Approach 3 - Using wifi with an mqtt server: 
+Approach 4 - Using wifi with an mqtt server: 
 - If you were using wifi you would need the wifi to be off most of the time to conserve power
   - Having a constant wifi connection is power intensive
 - However you also need there to be an active wifi connection to send and receive messages

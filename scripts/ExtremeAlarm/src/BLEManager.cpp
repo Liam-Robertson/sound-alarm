@@ -10,14 +10,17 @@ BLECharacteristic *pCharacteristic = nullptr;
 // Define a subclass of BLECharacteristicCallbacks
 class MyCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) override {
+        Serial.println("[BLEManager] Received message");
         std::string value = pCharacteristic->getValue();
         if (!value.empty()) {
             DynamicJsonDocument doc(1024);
             DeserializationError error = deserializeJson(doc, value.c_str());
             if (!error) {
                 if (doc.containsKey("startAlarm")) {
+                    Serial.println("[BLEManager] Received startAlarm message");
                     AudioManager::playAlarm();
                 } else if (doc.containsKey("stopAlarm")) {
+                    Serial.println("[BLEManager] Received stopAlarm message");
                     AudioManager::stopAlarm();
                 }
             }
@@ -26,6 +29,7 @@ class MyCallbacks: public BLECharacteristicCallbacks {
 };
 
 void BLEManager::init() {
+    Serial.println("[BLEManager] Initialization started.");
     BLEDevice::init("ESP32_BLE_Alarm_Server");
     pServer = BLEDevice::createServer();
     BLEService *pService = pServer->createService(SERVICE_UUID);
@@ -35,7 +39,7 @@ void BLEManager::init() {
     pCharacteristic->setCallbacks(new MyCallbacks());
     pService->start();
     BLEDevice::getAdvertising()->start();
-    Serial.println("BLE server is running and advertising.");
+    Serial.println("[BLEManager] BLE server is running and advertising.");
 }
 
 void BLEManager::loop() {

@@ -124,7 +124,7 @@ class MainViewModel @Inject constructor(
     fun onQRCodeScanned(qrCode: String) {
         if (qrCode == "b9069d49-0956-4e34-b454-401044599906") {
             Log.d("QR Code Scanner", "Correct QR Code scanned")
-//            bluetoothRepository.stopAlarmPlaying()
+            bluetoothRepository.stopAlarmPlaying()
         }
     }
 
