@@ -36,4 +36,3 @@ void Audio::handleMP3Playback(bool alarmState) {
         file = nullptr;
     }
 }
-
