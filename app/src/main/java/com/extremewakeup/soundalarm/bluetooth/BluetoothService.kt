@@ -16,11 +16,11 @@ class BluetoothService(private val context: Context) {
         }
 
         isScanningOrConnecting = true
-        Log.d("BluetoothService", "initiateConnection: Starting device scan")
+        Log.d("BluetoothService", "bluetoothService: Starting device scan")
         bluetoothManager.scanForDevices { device ->
-            Log.d("BluetoothService", "initiateConnection: Device found, attempting connection")
+            Log.d("BluetoothService", "bluetoothService: Device found, attempting connection")
             bluetoothManager.connectToDevice(device) {
-                Log.d("BluetoothService", "initiateConnection: Device connected, ready for commands")
+                Log.d("BluetoothService", "bluetoothService: Device connected, ready for commands")
                 isConnected = true
                 isScanningOrConnecting = false
                 onConnected()
@@ -32,7 +32,11 @@ class BluetoothService(private val context: Context) {
         if (isConnected) {
             Log.d("BluetoothService", "sendStartAlarm: Sending start alarm command")
             bluetoothManager.sendAlarmDataToESP32(alarm)
-        } else {
+        } else if (!isConnected && isScanningOrConnecting) {
+            Log.d("BluetoothService", "Bluetooth Service: is connecting")
+            sendStartAlarm(alarm)
+        }
+        else {
             Log.d("BluetoothService", "sendStartAlarm: Device not connected, waiting for connection")
             initiateConnection {
                 sendStartAlarm(alarm)

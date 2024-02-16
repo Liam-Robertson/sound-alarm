@@ -32,9 +32,8 @@ class SendMessageWorker @Inject constructor(
         try {
             val alarm = alarmRepository.getAlarmById(alarmId)
             if (alarm != null) {
-                Log.d("SendMessageWorker", "Sending alarm to ESP32: $alarm")
+                Log.d("SendMessageWorker", "Worker sending alarm to ESP32: $alarm")
                 bluetoothRepository.sendAlarmToESP32(alarm)
-                Log.d("SendMessageWorker", "Alarm sent successfully to ESP32: $alarm")
                 Result.success()
             } else {
                 Log.e("SendMessageWorker", "Alarm not found")

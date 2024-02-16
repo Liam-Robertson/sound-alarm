@@ -33,7 +33,7 @@ class BluetoothManager(private val context: Context) {
     }
 
     fun scanForDevices(onDeviceFound: (BluetoothDevice) -> Unit) {
-        Log.d("BluetoothManager", "scanForDevices: Starting device scan")
+        Log.d("BluetoothManager", "bluetoothManager: Starting device scan")
         val leScanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult?) {
                 super.onScanResult(callbackType, result)

@@ -15,7 +15,6 @@ BLECharacteristic *pCharacteristic = nullptr;
 volatile bool startAlarm = false;
 volatile bool stopAlarm = false;
 volatile bool alarmState = false; 
-// Audio audio; -**********
 
 AudioGeneratorMP3 *mp3;
 AudioFileSourceSPIFFS *file;
