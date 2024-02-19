@@ -25,6 +25,8 @@ import com.extremewakeup.soundalarm.bluetooth.BluetoothRepository
 import com.extremewakeup.soundalarm.navigation.AppNavigation
 import com.extremewakeup.soundalarm.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.UUID
 
 @HiltViewModel
@@ -41,7 +43,7 @@ class MainViewModel @Inject constructor(
     private val _alarmList = MutableLiveData<List<Alarm>>()
     val alarmList: LiveData<List<Alarm>> = _alarmList
 
-    private val _isQRScannerVisible = MutableLiveData<Boolean>(false)
+    val _isQRScannerVisible = MutableLiveData<Boolean>(false)
     val isQRScannerVisible: LiveData<Boolean> = _isQRScannerVisible
 
     private val _bluetoothPermissionGranted = MutableLiveData<Boolean>()
@@ -50,6 +52,8 @@ class MainViewModel @Inject constructor(
     fun updateBluetoothPermissionStatus(isGranted: Boolean) {
         _bluetoothPermissionGranted.value = isGranted
     }
+
+    private val schedulingMutex = Mutex()
 
 //    fun updatePermissionsStatus(isGranted: Boolean) {
 //        _permissionGranted.value = isGranted
@@ -84,6 +88,7 @@ class MainViewModel @Inject constructor(
     fun addAlarm(alarm: Alarm) {
         viewModelScope.launch {
             try {
+                Log.e("MainActivity", "BEEENG")
                 alarmRepository.insertAlarm(alarm)
                 scheduleAlarms(context)
                 refreshAlarmList()
@@ -94,19 +99,22 @@ class MainViewModel @Inject constructor(
     }
 
     fun scheduleAlarms(context: Context) {
+        Log.e("MainActivity", "BUUUUNG")
         viewModelScope.launch(Dispatchers.IO) {
-            val currentAlarms = alarmList.value ?: return@launch
-            scheduleAlarms(context, currentAlarms)
+            schedulingMutex.withLock {
+                val currentAlarms = alarmList.value ?: return@launch
+                scheduleAlarms(context, currentAlarms)
+            }
         }
     }
 
     fun onAlarmTriggered() {
         _isQRScannerVisible.value = true
     }
-
+    
     private fun refreshAlarmList() {
         viewModelScope.launch(Dispatchers.IO) {
-            val updatedAlarms = alarmRepository.getAlarmList() // This now returns List<Alarm>
+            val updatedAlarms = alarmRepository.getAlarmList()
             withContext(Dispatchers.Main) {
                 _alarmList.value = updatedAlarms
             }
@@ -131,10 +139,6 @@ class MainViewModel @Inject constructor(
     fun selectDaysActive(alarm: Alarm, dayIndex: Int) {
         null
     }
-
-
-
-
 }
 
 

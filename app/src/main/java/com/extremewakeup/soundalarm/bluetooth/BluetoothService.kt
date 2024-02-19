@@ -21,6 +21,7 @@ class BluetoothService(private val context: Context) {
             Log.d("BluetoothService", "bluetoothService: Device found, attempting connection")
             bluetoothManager.connectToDevice(device) {
                 Log.d("BluetoothService", "bluetoothService: Device connected, ready for commands")
+                Log.d("BluetoothService", "isConnected = $isConnected")
                 isConnected = true
                 isScanningOrConnecting = false
                 onConnected()
@@ -29,33 +30,29 @@ class BluetoothService(private val context: Context) {
     }
 
     fun sendStartAlarm(alarm: Alarm) {
+        Log.d("BluetoothService", "isConnected = $isConnected")
         if (isConnected) {
             Log.d("BluetoothService", "sendStartAlarm: Sending start alarm command")
             bluetoothManager.sendAlarmDataToESP32(alarm)
-        } else if (!isConnected && isScanningOrConnecting) {
-            Log.d("BluetoothService", "Bluetooth Service: is connecting")
-            sendStartAlarm(alarm)
         }
         else {
-            Log.d("BluetoothService", "sendStartAlarm: Device not connected, waiting for connection")
+            Log.d("BluetoothService", "sendStartAlarm: Device not connected, starting connection")
             initiateConnection {
-                sendStartAlarm(alarm)
+                bluetoothManager.sendAlarmDataToESP32(alarm)
             }
         }
     }
 
     fun sendStopAlarm() {
+        Log.d("BluetoothService", "isConnected = $isConnected")
         if (isConnected) {
             Log.d("BluetoothService", "sendStopAlarm: Sending stop alarm command")
             bluetoothManager.stopPlayingAlarm()
-        } else if (!isConnected && isScanningOrConnecting) {
-            Log.d("BluetoothService", "Bluetooth Service: is connecting")
-            sendStopAlarm()
         }
         else {
-            Log.d("BluetoothService", "sendStopAlarm: Device not connected, waiting for connection")
+            Log.d("BluetoothService", "sendStopAlarm: Device not connected, starting connection")
             initiateConnection {
-                sendStopAlarm()
+                bluetoothManager.stopPlayingAlarm()
             }
         }
     }

@@ -7,7 +7,7 @@ Note:
 - Wifi is better since it has better range and is more stable but bluetooth consumes less power and has better built in functionality 
 - In order to use wifi, you'd have to find ways to consistently turn the wifi connection on and off to conserve power while also still be able to receive messages
 - Right now I'm leaning towards using approach 1 in the short term and moving to approach 3 if I have range concerns
-- Approach 2 also seems viable but I need to test that 
+- Approach 2 seems like it wouldn't work 
 
 Approach 1 - Using bluetooth:
 - The simplest one - bluetooth has lots of functionality designed for this 
@@ -19,6 +19,8 @@ Approach 2 - Using wifi only and disconnecting regularly:
 - What if I just kept the wifi capabilities on all the time but didn't keep it constantly connected? Would that still drain battery? 
 - I feel like that's what I did before though right and it still drained a ton of battery 
 - I don't think that's what you did, I think 
+- How would this work? How would the esp32 know when to connect to the wifi network? 
+- You would want it to only connect to the wifi when the wifi is ready but the esp32 has no idea when that is 
 
 Approach 3 - Mix of bluetooth and wifi: 
 - There would always be a bluetooth signal to allow the user to create alarms and have them stored in the esp32

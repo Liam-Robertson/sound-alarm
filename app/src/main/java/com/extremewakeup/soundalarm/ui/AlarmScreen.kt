@@ -55,7 +55,7 @@ fun AlarmScreen(navController: NavController, viewModel: MainViewModel, context:
     var showCreateAlarmDialog by remember { mutableStateOf(false) }
     val isConnected = true
     var expandFirstAlarm by remember { mutableStateOf(false) }
-    val isQRScannerVisible by viewModel.isQRScannerVisible.observeAsState()
+    val _isQRScannerVisible by viewModel._isQRScannerVisible.observeAsState()
 
     if (!isConnected) {
         LaunchedEffect(Unit) {
@@ -65,7 +65,7 @@ fun AlarmScreen(navController: NavController, viewModel: MainViewModel, context:
         }
     }
 
-    if (isQRScannerVisible == true) {
+    if (_isQRScannerVisible == true) {
         QRCodeScanner { qrResult ->
             Log.d("QR Code Scanner", "QR Code Scanned")
             viewModel.onQRCodeScanned(qrResult)

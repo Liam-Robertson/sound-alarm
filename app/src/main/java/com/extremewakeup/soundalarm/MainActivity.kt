@@ -25,18 +25,21 @@ class MainActivity : ComponentActivity() {
         setContent {
             AppNavigation(viewModel, this)
         }
-        viewModel.alarmList.observe(this) { alarms ->
-            viewModel.scheduleAlarms(this)
-        }
-        if (intent.getBooleanExtra("showQRScanner", false)) {
+        if (!intent.getBooleanExtra("showQRScanner", false)) {
+            viewModel.alarmList.observe(this) { alarms ->
+                viewModel.scheduleAlarms(this)
+            }
+        } else {
             viewModel.onAlarmTriggered()
         }
-//        viewModel.updatePermissionsStatus(this)
     }
 
     override fun onResume() {
         super.onResume()
         viewModel.updatePermissionsStatus(this, isExactAlarmPermissionGranted())
+        if (intent.getBooleanExtra("showQRScanner", false)) {
+            viewModel.onAlarmTriggered()
+        }
     }
 
     private fun isExactAlarmPermissionGranted(): Boolean {
@@ -49,3 +52,15 @@ class MainActivity : ComponentActivity() {
 
 
 }
+
+
+//        viewModel.alarmList.observe(this) { alarms ->
+//            viewModel.scheduleAlarms(this)
+//        }
+
+//        if (intent.getBooleanExtra("showQRScanner", false)) {
+//            viewModel.onAlarmTriggered()
+//        }
+
+
+//        viewModel.updatePermissionsStatus(this)

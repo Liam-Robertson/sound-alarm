@@ -18,11 +18,13 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
+    @Singleton
     @Provides
     fun provideBluetoothService(@ApplicationContext context: Context): BluetoothService {
         return BluetoothService(context)
     }
 
+    @Singleton
     @Provides
     fun provideBluetoothRepository(bluetoothService: BluetoothService): BluetoothRepository {
         return BluetoothRepository(bluetoothService)
