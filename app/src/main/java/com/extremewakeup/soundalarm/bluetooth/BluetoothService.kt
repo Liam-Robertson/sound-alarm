@@ -8,7 +8,6 @@ import javax.inject.Inject
 
 class BluetoothService @Inject constructor(private val bluetoothManager: BluetoothManager) {
 
-    private val connectionMutex = Mutex()
     var isConnected = false
     private var isScanningOrConnecting = false
 

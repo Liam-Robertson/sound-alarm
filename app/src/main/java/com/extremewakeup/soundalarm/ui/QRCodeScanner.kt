@@ -13,7 +13,6 @@ import android.Manifest
 
 @Composable
 fun QRCodeScanner(onQRScanned: (String) -> Unit) {
-    val context = LocalContext.current
     val scannerLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         if (result.contents != null) {
             onQRScanned(result.contents)

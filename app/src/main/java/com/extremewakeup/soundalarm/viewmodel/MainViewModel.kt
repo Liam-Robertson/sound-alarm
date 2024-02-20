@@ -133,7 +133,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-
     fun isExactAlarmPermissionGranted(context: Context): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             return context.checkSelfPermission(Manifest.permission.SCHEDULE_EXACT_ALARM) == PackageManager.PERMISSION_GRANTED

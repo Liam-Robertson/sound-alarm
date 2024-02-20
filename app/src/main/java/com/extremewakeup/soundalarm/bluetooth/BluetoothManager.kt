@@ -76,7 +76,7 @@ class BluetoothManager(private val context: Context) {
                     Log.d("BluetoothManager", "connectToDevice: Connected to GATT server, starting service discovery")
                     gatt?.discoverServices()
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    Log.d("BluetoothManager", "connectToDevice: Disconnected from GATT server")
+                    Log.e("BluetoothManager", "connectToDevice: Disconnected from GATT server")
                 }
             }
 
@@ -103,7 +103,11 @@ class BluetoothManager(private val context: Context) {
             val alarmData = Json.encodeToString(MapSerializer(String.serializer(), AlarmTiming.serializer()), mapOf("startAlarm" to AlarmTiming(time = alarm.time, volume = alarm.volume))).toByteArray(Charsets.UTF_8)
             it.value = alarmData
             val writeResult = bluetoothGatt?.writeCharacteristic(it)
-            Log.d("BluetoothManager", "sendAlarmDataToESP32: Sending data ${if (writeResult == true) "succeeded" else "failed"}")
+            if (writeResult == true) {
+                Log.d("BluetoothManager", "sendAlarmDataToESP32: Sending data succeeded")
+            } else {
+                Log.e("BluetoothManager", "sendAlarmDataToESP32: Sending data failed")
+            }
         }
     }
 

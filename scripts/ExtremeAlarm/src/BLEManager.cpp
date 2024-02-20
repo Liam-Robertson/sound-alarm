@@ -35,7 +35,7 @@ class MyServerCallbacks: public BLEServerCallbacks {
 
     void onDisconnect(BLEServer* pServer) {
         Serial.println("[BLEManager] Client Disconnected, restarting advertising");
-        BLEManager::startAdvertising(); // Restart advertising after a disconnect
+        BLEManager::startAdvertising();
     }
 };
 

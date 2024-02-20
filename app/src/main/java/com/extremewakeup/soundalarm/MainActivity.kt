@@ -46,18 +46,4 @@ class MainActivity : ComponentActivity() {
         }
         return true
     }
-
-
 }
-
-
-//        viewModel.alarmList.observe(this) { alarms ->
-//            viewModel.scheduleAlarms(this)
-//        }
-
-//        if (intent.getBooleanExtra("showQRScanner", false)) {
-//            viewModel.onAlarmTriggered()
-//        }
-
-
-//        viewModel.updatePermissionsStatus(this)
