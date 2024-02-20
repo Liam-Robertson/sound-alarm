@@ -92,10 +92,9 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 Log.e("MainActivity", "BEEENG")
-                Log.d("AlarmList", "Current alarm: ${alarm.time.toString()}")
+                Log.d("AlarmList", "Current alarm: ${alarm.time}")
                 alarmRepository.insertAlarm(alarm)
                 refreshAlarmList()
-                scheduleAlarms(context)
             } catch (e: Exception) {
                 // Handle exceptions
             }
@@ -106,6 +105,7 @@ class MainViewModel @Inject constructor(
         Log.e("MainActivity", "BUUUUNG")
         viewModelScope.launch(Dispatchers.IO) {
             val currentAlarms = alarmList.value ?: return@launch
+            Log.d("AlarmList", "Current alarms before scheduling: ${alarmList.value}")
             scheduleAlarms(context, currentAlarms)
         }
     }
@@ -127,10 +127,10 @@ class MainViewModel @Inject constructor(
         val updatedAlarms = withContext(Dispatchers.IO) {
             alarmRepository.getAlarmList()
         }
-        _alarmList.postValue(updatedAlarms)
-
-        // Log the updated list here to ensure it reflects the recent changes
-        Log.d("AlarmList", "Current alarms after update: $updatedAlarms")
+        withContext(Dispatchers.Main) {
+            _alarmList.value = updatedAlarms
+            scheduleAlarms(context)
+        }
     }
 
 

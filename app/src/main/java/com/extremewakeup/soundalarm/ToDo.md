@@ -1,3 +1,6 @@
+Current issues:
+- BUUUUNG is called twice 
+
 To do list:
 - Create delete alarm button
 - Make it a https request instead of http
