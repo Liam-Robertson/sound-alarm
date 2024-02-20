@@ -5,6 +5,9 @@
 #include <Audio.h>
 
 class AudioManager {
+private:
+    static bool alarmManuallyStopped; 
+
 public:
     static void init();
     static void loop();
