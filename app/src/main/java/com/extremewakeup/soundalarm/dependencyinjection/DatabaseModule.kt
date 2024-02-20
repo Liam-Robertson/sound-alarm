@@ -3,6 +3,7 @@ package com.extremewakeup.soundalarm.dependencyinjection
 import android.app.AlarmManager
 import android.content.Context
 import androidx.room.Room
+import com.extremewakeup.soundalarm.bluetooth.BluetoothManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,14 +21,20 @@ object DatabaseModule {
 
     @Singleton
     @Provides
-    fun provideBluetoothService(@ApplicationContext context: Context): BluetoothService {
-        return BluetoothService(context)
+    fun provideBluetoothService(bluetoothManager: BluetoothManager): BluetoothService {
+        return BluetoothService(bluetoothManager)
     }
 
     @Singleton
     @Provides
     fun provideBluetoothRepository(bluetoothService: BluetoothService): BluetoothRepository {
         return BluetoothRepository(bluetoothService)
+    }
+
+    @Singleton
+    @Provides
+    fun provideBluetoothManager(@ApplicationContext context: Context): BluetoothManager {
+        return BluetoothManager(context)
     }
 
     @Provides

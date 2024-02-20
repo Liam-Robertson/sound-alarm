@@ -21,6 +21,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.Observer
 import com.extremewakeup.soundalarm.bluetooth.BluetoothRepository
 import com.extremewakeup.soundalarm.navigation.AppNavigation
 import com.extremewakeup.soundalarm.viewmodel.MainViewModel
@@ -82,16 +83,19 @@ class MainViewModel @Inject constructor(
     }
 
     init {
-        refreshAlarmList()
+        viewModelScope.launch {
+            refreshAlarmList()
+        }
     }
 
     fun addAlarm(alarm: Alarm) {
         viewModelScope.launch {
             try {
                 Log.e("MainActivity", "BEEENG")
+                Log.d("AlarmList", "Current alarm: ${alarm.time.toString()}")
                 alarmRepository.insertAlarm(alarm)
-                scheduleAlarms(context)
                 refreshAlarmList()
+                scheduleAlarms(context)
             } catch (e: Exception) {
                 // Handle exceptions
             }
@@ -101,25 +105,34 @@ class MainViewModel @Inject constructor(
     fun scheduleAlarms(context: Context) {
         Log.e("MainActivity", "BUUUUNG")
         viewModelScope.launch(Dispatchers.IO) {
-            schedulingMutex.withLock {
-                val currentAlarms = alarmList.value ?: return@launch
-                scheduleAlarms(context, currentAlarms)
-            }
+            val currentAlarms = alarmList.value ?: return@launch
+            scheduleAlarms(context, currentAlarms)
         }
     }
 
     fun onAlarmTriggered() {
         _isQRScannerVisible.value = true
     }
-    
-    private fun refreshAlarmList() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val updatedAlarms = alarmRepository.getAlarmList()
-            withContext(Dispatchers.Main) {
-                _alarmList.value = updatedAlarms
-            }
+
+//    private fun refreshAlarmList() {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            val updatedAlarms = alarmRepository.getAlarmList()
+//            withContext(Dispatchers.Main) {
+//                _alarmList.value = updatedAlarms
+//            }
+//        }
+//    }
+
+    private suspend fun refreshAlarmList() {
+        val updatedAlarms = withContext(Dispatchers.IO) {
+            alarmRepository.getAlarmList()
         }
+        _alarmList.postValue(updatedAlarms)
+
+        // Log the updated list here to ensure it reflects the recent changes
+        Log.d("AlarmList", "Current alarms after update: $updatedAlarms")
     }
+
 
     fun isExactAlarmPermissionGranted(context: Context): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
