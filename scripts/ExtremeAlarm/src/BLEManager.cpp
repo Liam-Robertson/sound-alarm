@@ -55,10 +55,6 @@ void BLEManager::init() {
     Serial.println("[BLEManager] BLE server is running and advertising.");
 }
 
-
-void BLEManager::loop() {
-}
-
 void BLEManager::startAdvertising() {
     Serial.println("[BLEManager] Starting or restarting advertising.");
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();

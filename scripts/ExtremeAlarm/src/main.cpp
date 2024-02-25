@@ -12,6 +12,5 @@ void setup() {
 }
 
 void loop() {
-    BLEManager::loop();
     AudioManager::loop();
 }

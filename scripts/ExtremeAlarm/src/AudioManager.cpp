@@ -10,7 +10,6 @@
 std::unique_ptr<AudioGeneratorMP3> mp3;
 std::unique_ptr<AudioFileSourceSPIFFS> file;
 std::unique_ptr<AudioOutputI2S> out;
-bool AudioManager::alarmManuallyStopped = false;
 
 void AudioManager::init() {
     resetAudioResources();
@@ -19,7 +18,6 @@ void AudioManager::init() {
 
 void AudioManager::playAlarm() {
     Serial.println("[AudioManager] Attempting to play alarm.");
-    alarmManuallyStopped = false;
     if (mp3 && !mp3->isRunning()) {
         mp3->begin(file.get(), out.get());
         Serial.println("[AudioManager] Alarm is now playing.");
@@ -32,9 +30,7 @@ void AudioManager::stopAlarm() {
     if (mp3 && mp3->isRunning()) {
         Serial.println("[AudioManager] Stopping alarm.");
         mp3->stop();
-        delay(1000);
         resetAudioResources();
-        alarmManuallyStopped = true;
         Serial.println("[AudioManager] Alarm stopped.");
     } else {
         Serial.println("[AudioManager] No alarm to stop or resources not initialized.");
@@ -49,9 +45,10 @@ void AudioManager::resetAudioResources() {
 }
 
 void AudioManager::loop() {
-    if (mp3 && mp3->isRunning() && !mp3->loop() && !alarmManuallyStopped) {
-        Serial.println("[AudioManager] MP3 playback ended. Stopping...");
-        delay(1000);
-        stopAlarm();
+    if (mp3 && mp3->isRunning()) {
+        if (!mp3->loop()) {
+            Serial.println("[AudioManager] MP3 playback ended.");
+        }
     }
 }
+
