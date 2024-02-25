@@ -2,7 +2,6 @@
 #define AudioManager_h
 
 #include <Arduino.h>
-#include <Audio.h>
 
 class AudioManager {
 private:
@@ -12,6 +11,7 @@ public:
     static void init();
     static void loop();
     static void playAlarm();
+    static void resetAudioResources();
     static void stopAlarm();
 };
 
