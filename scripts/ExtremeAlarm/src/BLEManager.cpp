@@ -1,67 +1,78 @@
 #include "BLEManager.h"
-#include <ArduinoJson.h>
+#include <Arduino.h>
 
-#define SERVICE_UUID "f261adff-f939-4446-82f9-2d00f4109dfe"
-#define CHARACTERISTIC_UUID "a2932117-5297-476b-96f7-a873b1075803"
+// Define the UUIDs for the BLE service and characteristics
+#define SERVICE_UUID           "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" // UART service UUID
+#define CHARACTERISTIC_UUID_RX "6E400002-B5A3-F393-E0A9-E50E24DCCA9E" // RX Characteristic UUID
+#define CHARACTERISTIC_UUID_TX "6E400003-B5A3-F393-E0A9-E50E24DCCA9E" // TX Characteristic UUID
 
-BLEServer *pServer = nullptr;
-BLECharacteristic *pCharacteristic = nullptr;
+// Initialize static member variables
+BLEServer* BLEManager::pServer = nullptr;
+BLECharacteristic* BLEManager::pTxCharacteristic = nullptr;
+bool BLEManager::deviceConnected = false;
+bool BLEManager::oldDeviceConnected = false;
 
-// Define a subclass of BLECharacteristicCallbacks
-class MyCallbacks: public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *pCharacteristic) override {
-        Serial.println("[BLEManager] Received message");
-        std::string value = pCharacteristic->getValue();
-        if (!value.empty()) {
-            DynamicJsonDocument doc(1024);
-            DeserializationError error = deserializeJson(doc, value.c_str());
-            if (!error) {
-                if (doc.containsKey("startAlarm")) {
-                    Serial.println("[BLEManager] Received startAlarm message");
-                    AudioManager::playAlarm();
-                } else if (doc.containsKey("stopAlarm")) {
-                    Serial.println("[BLEManager] Received stopAlarm message");
-                    AudioManager::stopAlarm();
-                }
-            }
+// Declaration of callback classes to be defined later
+class ServerCallbacks : public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer) override {
+        BLEManager::setDeviceConnected(true);
+    }
+
+    void onDisconnect(BLEServer* pServer) override {
+        BLEManager::setDeviceConnected(false);
+    }
+};
+
+class CharacteristicCallbacks : public BLECharacteristicCallbacks {
+    void onWrite(BLECharacteristic* pCharacteristic) override {
+        std::string rxValue = pCharacteristic->getValue();
+        if (!rxValue.empty()) {
+            Serial.print("Received Value: ");
+            Serial.println(rxValue.c_str());
+            // Here you can add code to handle the received data
         }
     }
 };
 
-class MyServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer) {
-        Serial.println("[BLEManager] Client Connected");
-    }
-
-    void onDisconnect(BLEServer* pServer) {
-        Serial.println("[BLEManager] Client Disconnected, restarting advertising");
-        BLEManager::startAdvertising();
-    }
-};
-
 void BLEManager::init() {
-    Serial.println("[BLEManager] Initialization started.");
-    BLEDevice::init("ESP32_BLE_Alarm_Server");
-    pServer = BLEDevice::createServer();
-    pServer->setCallbacks(new MyServerCallbacks()); // Set server callbacks
+    BLEDevice::init("ESP32_BLE_UART");
+    BLEManager::setupBLE();
+}
 
-    BLEService *pService = pServer->createService(SERVICE_UUID);
-    pCharacteristic = pService->createCharacteristic(
-                        CHARACTERISTIC_UUID,
-                        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
-    pCharacteristic->setCallbacks(new MyCallbacks());
+void BLEManager::setupBLE() {
+    pServer = BLEDevice::createServer();
+    pServer->setCallbacks(new ServerCallbacks());
+    
+    BLEService* pService = pServer->createService(SERVICE_UUID);
+
+    pTxCharacteristic = pService->createCharacteristic(
+                            CHARACTERISTIC_UUID_TX,
+                            BLECharacteristic::PROPERTY_NOTIFY);
+    pTxCharacteristic->addDescriptor(new BLE2902());
+
+    BLECharacteristic* pRxCharacteristic = pService->createCharacteristic(
+                                             CHARACTERISTIC_UUID_RX,
+                                             BLECharacteristic::PROPERTY_WRITE);
+    pRxCharacteristic->setCallbacks(new CharacteristicCallbacks());
+
     pService->start();
     startAdvertising();
-    Serial.println("[BLEManager] BLE server is running and advertising.");
 }
 
 void BLEManager::startAdvertising() {
-    Serial.println("[BLEManager] Starting or restarting advertising.");
-    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-    pAdvertising->addServiceUUID(SERVICE_UUID); // Ensure your service UUID is advertised
-    pAdvertising->setScanResponse(true);
-    pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
+    BLEAdvertising* pAdvertising = BLEDevice::getAdvertising();
+    pAdvertising->addServiceUUID(SERVICE_UUID);
+    pAdvertising->setScanResponse(false);
+    pAdvertising->setMinPreferred(0x06);  // Functions that help with iPhone connections issue
     pAdvertising->setMaxPreferred(0x12);
     BLEDevice::startAdvertising();
-    Serial.println("[BLEManager] Advertising started.");
+    Serial.println("Waiting for a client to connect...");
+}
+
+bool BLEManager::isDeviceConnected() {
+    return deviceConnected;
+}
+
+void BLEManager::setDeviceConnected(bool connected) {
+    deviceConnected = connected;
 }

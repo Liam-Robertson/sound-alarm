@@ -6,11 +6,11 @@
 void setup() {
     Serial.begin(9600);
     Serial.println("Initializing system...");
-    SPIFFSSetup::setupSPIFFS();
+    // SPIFFSSetup::setupSPIFFS();
     BLEManager::init();
-    AudioManager::init();
+    // AudioManager::init();
 }
 
 void loop() {
-    AudioManager::loop();
+    // AudioManager::loop();
 }

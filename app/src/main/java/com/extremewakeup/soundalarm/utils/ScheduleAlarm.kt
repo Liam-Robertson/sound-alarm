@@ -1,11 +1,14 @@
 package com.extremewakeup.soundalarm.utils
 
+import android.app.Activity
 import android.app.AlarmManager
 import android.app.PendingIntent
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import com.extremewakeup.soundalarm.model.Alarm
 import com.extremewakeup.soundalarm.receiver.AlarmReceiver
 import java.time.LocalDate
@@ -27,10 +30,23 @@ fun scheduleAlarms(context: Context, alarmList: List<Alarm>) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 private fun requestExactAlarmPermission(context: Context) {
     val intent = Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-    context.startActivity(intent)
+    // Check if the context is an instance of an Activity
+    if (context !is Activity) {
+        // If not, add FLAG_ACTIVITY_NEW_TASK to launch the new activity as a new task
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+    }
+    try {
+        context.startActivity(intent)
+    } catch (e: ActivityNotFoundException) {
+        Log.e("requestExactAlarm", "Unable to open exact alarm permission settings.", e)
+        // Handle the situation when the settings activity is not found.
+        // This is unlikely but it's good to handle it just in case.
+    }
 }
+
 
 private fun scheduleExactAlarm(context: Context, alarm: Alarm, alarmManager: AlarmManager) {
     val now = ZonedDateTime.now(ZoneId.systemDefault())

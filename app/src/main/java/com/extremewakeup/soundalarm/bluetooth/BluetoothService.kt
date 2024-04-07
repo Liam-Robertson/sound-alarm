@@ -1,6 +1,8 @@
 package com.extremewakeup.soundalarm.bluetooth
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.extremewakeup.soundalarm.model.Alarm
 import kotlinx.coroutines.sync.Mutex
@@ -33,12 +35,15 @@ class BluetoothService @Inject constructor(private val bluetoothManager: Bluetoo
         Log.d("BluetoothService", "bluetoothService: Starting device scan")
         bluetoothManager.scanForDevices { device ->
             Log.d("BluetoothService", "bluetoothService: Device found, attempting connection")
-            bluetoothManager.connectToDevice(device) {
-                Log.d("BluetoothService", "bluetoothService: Device connected, ready for commands")
-                isConnected = true
-                isScanningOrConnecting = false
-                onConnected()
-            }
+            // Delay for 2 seconds after scanning has stopped before trying to connect
+            Handler(Looper.getMainLooper()).postDelayed({
+                bluetoothManager.connectToDevice(device) {
+                    Log.d("BluetoothService", "bluetoothService: Device connected, ready for commands")
+                    isConnected = true
+                    isScanningOrConnecting = false
+                    onConnected()
+                }
+            }, 2000)
         }
     }
 

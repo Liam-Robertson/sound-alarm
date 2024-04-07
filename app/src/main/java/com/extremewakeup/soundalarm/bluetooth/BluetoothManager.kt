@@ -11,6 +11,8 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import com.extremewakeup.soundalarm.model.Alarm
@@ -26,6 +28,9 @@ class BluetoothManager(private val context: Context) {
     private val serviceUUID: UUID = UUID.fromString("f261adff-f939-4446-82f9-2d00f4109dfe")
     private val characteristicUUID: UUID = UUID.fromString("a2932117-5297-476b-96f7-a873b1075803")
     private val foundDevices = mutableSetOf<String>()
+    private var retryCount = 0
+    private val maxRetries = 3 // Maximum number of retries
+    private val retryDelay = 2000L // Delay between retries in milliseconds
 
     init {
         val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -39,13 +44,14 @@ class BluetoothManager(private val context: Context) {
             override fun onScanResult(callbackType: Int, result: ScanResult?) {
                 super.onScanResult(callbackType, result)
                 result?.device?.let { device ->
+                    Log.d("BluetoothManager", "bluetoothManager: on scan result received")
                     if (device.name == "ESP32_BLE_Alarm_Server" && foundDevices.add(device.address)) {
                         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
                             Log.e("BluetoothManager", "scanForDevices: BLUETOOTH_SCAN permissions not granted")
                             return
                         }
-                        bluetoothAdapter?.bluetoothLeScanner?.stopScan(this)
                         Log.d("BluetoothManager", "scanForDevices: ESP32 device found, scanning stopped")
+                        bluetoothAdapter?.bluetoothLeScanner?.stopScan(this)
                         onDeviceFound(device)
                     }
                 }
@@ -59,7 +65,6 @@ class BluetoothManager(private val context: Context) {
         bluetoothAdapter?.bluetoothLeScanner?.startScan(leScanCallback)
     }
 
-
     fun connectToDevice(device: BluetoothDevice, onConnected: () -> Unit) {
         Log.d("BluetoothManager", "connectToDevice: Attempting to connect to device ${device.address}")
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
@@ -72,11 +77,24 @@ class BluetoothManager(private val context: Context) {
                     Log.d("BluetoothManager", "BLUETOOTH_CONNECT permissions not granted")
                     return
                 }
-                if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    Log.d("BluetoothManager", "connectToDevice: Connected to GATT server, starting service discovery")
-                    gatt?.discoverServices()
-                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    Log.e("BluetoothManager", "connectToDevice: Disconnected from GATT server")
+                when (newState) {
+                    BluetoothProfile.STATE_CONNECTED -> {
+                        Log.d("BluetoothManager", "connectToDevice: Connected to GATT server, starting service discovery")
+                        gatt?.discoverServices()
+                        retryCount = 0 // Reset retry count on success
+                    }
+                    BluetoothProfile.STATE_DISCONNECTED -> {
+                        Log.e("BluetoothManager", "connectToDevice: Disconnected from GATT server")
+                        if (retryCount < maxRetries) {
+                            retryCount++
+                            Log.d("BluetoothManager", "Attempt $retryCount to reconnect")
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                connectToDevice(device, onConnected)
+                            }, retryDelay)
+                        } else {
+                            Log.e("BluetoothManager", "Max retries reached, giving up on connection.")
+                        }
+                    }
                 }
             }
 
