@@ -45,7 +45,7 @@ class BluetoothManager(private val context: Context) {
                 super.onScanResult(callbackType, result)
                 result?.device?.let { device ->
                     Log.d("BluetoothManager", "bluetoothManager: on scan result received")
-                    if (device.name == "ESP32_BLE_Alarm_Server" && foundDevices.add(device.address)) {
+                    if (device.name == "ESP32_BLE_Server" && foundDevices.add(device.address)) {
                         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
                             Log.e("BluetoothManager", "scanForDevices: BLUETOOTH_SCAN permissions not granted")
                             return

@@ -2,8 +2,8 @@
 #include "BLEManager.h"
 #include <Arduino.h>
 
-#define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
-#define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+#define SERVICE_UUID        "f261adff-f939-4446-82f9-2d00f4109dfe"
+#define CHARACTERISTIC_UUID "a2932117-5297-476b-96f7-a873b1075803"
 
 void BLEManager::init() {
     BLEDevice::init("ESP32_BLE_Server");
