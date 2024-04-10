@@ -117,10 +117,14 @@ class BluetoothManager(private val context: Context) {
         Log.d("BluetoothManager", "sendAlarmDataToESP32: Preparing to send alarm data")
         val service = bluetoothGatt?.getService(serviceUUID)
         val characteristic = service?.getCharacteristic(characteristicUUID)
+        Log.d("BluetoothManager", "11111")
         characteristic?.let {
+            Log.d("BluetoothManager", "2222")
             val alarmData = Json.encodeToString(MapSerializer(String.serializer(), AlarmTiming.serializer()), mapOf("startAlarm" to AlarmTiming(time = alarm.time, volume = alarm.volume))).toByteArray(Charsets.UTF_8)
+            Log.d("BluetoothManager", "33333")
             it.value = alarmData
             val writeResult = bluetoothGatt?.writeCharacteristic(it)
+            Log.d("BluetoothManager", "4444444")
             if (writeResult == true) {
                 Log.d("BluetoothManager", "sendAlarmDataToESP32: Sending data succeeded")
             } else {
