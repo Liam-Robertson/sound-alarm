@@ -82,6 +82,10 @@ class MainViewModel @Inject constructor(
         _permissionGranted.value = isExactAlarmPermissionGranted && isBluetoothPermissionGranted && isBluetoothScanGranted && isFineLocationGranted
     }
 
+    fun connectToDevice() {
+        bluetoothRepository.connectToDevice()
+    }
+
     init {
         viewModelScope.launch {
             refreshAlarmList()

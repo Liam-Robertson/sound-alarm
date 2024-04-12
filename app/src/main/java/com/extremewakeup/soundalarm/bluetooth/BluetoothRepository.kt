@@ -18,4 +18,10 @@ class BluetoothRepository @Inject constructor(private val bluetoothService: Blue
         Log.d("BluetoothRepository", "stopAlarmPlaying: Preparing to stop alarm on ESP32")
         bluetoothService.sendStopAlarm()
     }
+
+    fun connectToDevice() {
+        Log.d("BluetoothRepository", "BluetoothRepository: Preparing to connect to ESP32")
+        bluetoothService.initiateConnection {
+        }
+    }
 }
