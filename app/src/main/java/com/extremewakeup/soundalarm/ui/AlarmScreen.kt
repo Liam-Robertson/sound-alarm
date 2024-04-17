@@ -93,14 +93,25 @@ fun AlarmScreen(navController: NavController, viewModel: MainViewModel, context:
                 .padding(bottom = 16.dp)
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
 
+        Button(onClick = {
+            Log.d("PermissionScreen", "Bond with esp32")
+            viewModel.bondToDevice()
+        }) {
+            androidx.compose.material.Text("Bond with esp32")
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(onClick = {
             Log.d("PermissionScreen", "Connect to esp32 clicked")
-            viewModel.connectToDevice()
-        }) {
+            viewModel.sendMessageToDevice()
+        },
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(bottom = 16.dp)
+        ) {
             androidx.compose.material.Text("Connect to esp32")
         }
     }

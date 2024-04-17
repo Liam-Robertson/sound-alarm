@@ -28,6 +28,7 @@ import com.extremewakeup.soundalarm.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.LocalTime
 import java.util.UUID
 
 @HiltViewModel
@@ -82,8 +83,13 @@ class MainViewModel @Inject constructor(
         _permissionGranted.value = isExactAlarmPermissionGranted && isBluetoothPermissionGranted && isBluetoothScanGranted && isFineLocationGranted
     }
 
-    fun connectToDevice() {
-        bluetoothRepository.connectToDevice()
+    fun bondToDevice() {
+        bluetoothRepository.bondWithDevice()
+    }
+
+    fun sendMessageToDevice() {
+        val daysActive = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+        bluetoothRepository.sendAlarmToESP32(Alarm(id = 1,time = LocalTime.now(), daysActive = daysActive, volume = 5, isActive = true, userId = 2))
     }
 
     init {

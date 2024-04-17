@@ -9,7 +9,10 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
@@ -38,32 +41,106 @@ class BluetoothManager(private val context: Context) {
         Log.d("BluetoothManager", "BluetoothManager initialized")
     }
 
-    fun scanForDevices(onDeviceFound: (BluetoothDevice) -> Unit) {
-        Log.d("BluetoothManager", "bluetoothManager: Starting device scan")
-        val leScanCallback = object : ScanCallback() {
-            override fun onScanResult(callbackType: Int, result: ScanResult?) {
-                super.onScanResult(callbackType, result)
-                result?.device?.let { device ->
-                    Log.d("BluetoothManager", "bluetoothManager: on scan result received")
-                    if (device.name == "ESP32_BLE_Server" && foundDevices.add(device.address)) {
-                        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-                            Log.e("BluetoothManager", "scanForDevices: BLUETOOTH_SCAN permissions not granted")
+//    private fun saveConnectionState(isConnected: Boolean) {
+//        val sharedPreferences = context.getSharedPreferences("BluetoothPreferences", Context.MODE_PRIVATE)
+//        sharedPreferences.edit().putBoolean("isConnected", isConnected).apply()
+//    }
+
+    fun discoverAndBond() {
+        val deviceAddress = "E8:6B:EA:E0:05:3E"
+        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+
+        // Check if already bonded without starting discovery
+        val alreadyBonded = bluetoothAdapter.bondedDevices.any { it.address == deviceAddress }
+        if (alreadyBonded) {
+            Log.d("BluetoothManager", "Device already bonded.")
+            return
+        }
+
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val action: String? = intent.action
+                if (BluetoothDevice.ACTION_FOUND == action) {
+                    val device: BluetoothDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)!!
+                    val foundAddress = device.address
+                    if (foundAddress == deviceAddress) {
+                        Log.d("BluetoothManager", "Attempting to create bond with device: $foundAddress")
+                        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                             return
                         }
-                        Log.d("BluetoothManager", "scanForDevices: ESP32 device found, scanning stopped")
-                        bluetoothAdapter?.bluetoothLeScanner?.stopScan(this)
-                        onDeviceFound(device)
+                        device.createBond()
                     }
                 }
             }
+        }
 
-            override fun onScanFailed(errorCode: Int) {
-                Log.e("BluetoothManager", "scanForDevices: Scan failed with error code: $errorCode")
+        // Register the BroadcastReceiver
+        val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
+        context.registerReceiver(receiver, filter)
+
+        // Start discovery
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+            // Handle permission request
+            return
+        }
+        bluetoothAdapter.startDiscovery()
+        // Don't forget to unregister the receiver appropriately to avoid memory leaks
+    }
+
+    fun scanForDevices(onDeviceFound: (BluetoothDevice) -> Unit) {
+        Log.d("BluetoothManager", "bluetoothManager: Checking bonded devices")
+        val bondedDevices = bluetoothAdapter?.bondedDevices
+        if (bondedDevices.isNullOrEmpty()) {
+            Log.d("BluetoothManager", "No bonded Bluetooth devices found.")
+        } else {
+            Log.d("BluetoothManager", "Bonded Bluetooth devices:")
+            for (device in bondedDevices) {
+                Log.d("BluetoothManager", "Device Name: ${device.name}, Address: ${device.address}")
             }
         }
-        foundDevices.clear()
-        bluetoothAdapter?.bluetoothLeScanner?.startScan(leScanCallback)
+        val esp32Device = bondedDevices?.find { it.name == "ESP32_BLE_Server" }
+
+        if (esp32Device != null) {
+            Log.d("BluetoothManager", "ESP32_BLE_Server is already bonded")
+            onDeviceFound(esp32Device)
+        } else {
+            Log.d("BluetoothManager", "bluetoothManager: Starting device scan")
+            val leScanCallback = object : ScanCallback() {
+                override fun onScanResult(callbackType: Int, result: ScanResult?) {
+                    super.onScanResult(callbackType, result)
+                    result?.device?.let { device ->
+                        Log.d("BluetoothManager", "bluetoothManager: on scan result received")
+                        Log.d("BluetoothManager", "device name ${device.name}")
+                        Log.d("BluetoothManager", "device name ${device.address}")
+                        Log.d("BluetoothManager", "foundDevices $foundDevices")
+                        // I'm pretty confident that the esp32 stops advertising itself after it's connected to the android device
+                        // I need the esp32 to know if it's disconnected and to start advertising again (or to always be advertising)
+                        // I also feel like having foundDevices.add(device.address) in the if statement is causing issues
+                        // Bonding and connecting are two different processes in ble
+//                        if (device.name == "ESP32_BLE_Server" && foundDevices.add(device.address)) {
+                        if (device.name == "ESP32_BLE_Server") {
+                            Log.d("BluetoothManager", "foundDevices $foundDevices")
+                            Log.e("BluetoothManager", "FOUND")
+                            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                                Log.e("BluetoothManager", "scanForDevices: BLUETOOTH_SCAN permissions not granted")
+                                return
+                            }
+                            Log.d("BluetoothManager", "scanForDevices: ESP32 device found, scanning stopped")
+                            bluetoothAdapter?.bluetoothLeScanner?.stopScan(this)
+                            onDeviceFound(device)
+                        }
+                    }
+                }
+
+                override fun onScanFailed(errorCode: Int) {
+                    Log.e("BluetoothManager", "scanForDevices: Scan failed with error code: $errorCode")
+                }
+            }
+            foundDevices.clear()
+            bluetoothAdapter?.bluetoothLeScanner?.startScan(leScanCallback)
+        }
     }
+
 
     fun connectToDevice(device: BluetoothDevice, onConnected: () -> Unit) {
         Log.d("BluetoothManager", "connectToDevice: Attempting to connect to device ${device.address}")
@@ -71,6 +148,7 @@ class BluetoothManager(private val context: Context) {
             Log.d("BluetoothManager", "BLUETOOTH_CONNECT permissions not granted")
             return
         }
+
         bluetoothGatt = device.connectGatt(context, false, object : BluetoothGattCallback() {
             override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
                 if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
@@ -81,10 +159,13 @@ class BluetoothManager(private val context: Context) {
                     BluetoothProfile.STATE_CONNECTED -> {
                         Log.d("BluetoothManager", "connectToDevice: Connected to GATT server, starting service discovery")
                         gatt?.discoverServices()
+//                        saveConnectionState(true)
                         retryCount = 0 // Reset retry count on success
+                        onConnected()
                     }
                     BluetoothProfile.STATE_DISCONNECTED -> {
                         Log.e("BluetoothManager", "connectToDevice: Disconnected from GATT server")
+//                        saveConnectionState(false)
                         if (retryCount < maxRetries) {
                             retryCount++
                             Log.d("BluetoothManager", "Attempt $retryCount to reconnect")
@@ -101,7 +182,6 @@ class BluetoothManager(private val context: Context) {
             override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     Log.d("BluetoothManager", "connectToDevice: BLE services discovered, device ready for communication")
-                    onConnected()
                 } else {
                     Log.e("BluetoothManager", "connectToDevice: Service discovery failed with status: $status")
                 }

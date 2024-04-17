@@ -24,4 +24,8 @@ class BluetoothRepository @Inject constructor(private val bluetoothService: Blue
         bluetoothService.initiateConnection {
         }
     }
+
+    fun bondWithDevice() {
+        bluetoothService.bondWithDevice()
+    }
 }

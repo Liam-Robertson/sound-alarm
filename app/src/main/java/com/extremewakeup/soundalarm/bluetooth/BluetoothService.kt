@@ -1,33 +1,36 @@
 package com.extremewakeup.soundalarm.bluetooth
 
+import android.Manifest
+import android.bluetooth.BluetoothDevice
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.core.app.ActivityCompat
 import com.extremewakeup.soundalarm.model.Alarm
 import kotlinx.coroutines.sync.Mutex
 import javax.inject.Inject
 
-class BluetoothService @Inject constructor(private val bluetoothManager: BluetoothManager) {
+class BluetoothService @Inject constructor(
+    private val context: Context,
+    private val bluetoothManager: BluetoothManager
+) {
 
     var isConnected = false
     private var isScanningOrConnecting = false
 
-    private var lastConnectionAttemptTime = 0L
-    private val connectionAttemptDelay = 2000L
-
-    private fun canAttemptConnection(): Boolean {
-        val currentTime = System.currentTimeMillis()
-        if (currentTime - lastConnectionAttemptTime > connectionAttemptDelay) {
-            lastConnectionAttemptTime = currentTime
-            return true
-        }
-        return false
+    fun bondWithDevice() {
+        bluetoothManager.discoverAndBond()
     }
 
     fun initiateConnection(onConnected: () -> Unit) {
-        if (isScanningOrConnecting || !canAttemptConnection()) {
-            Log.d("BluetoothService", "initiateConnection: Connection attempt debounced")
+//        if (isConnected) {
+//            Log.d("BluetoothService", "initiateConnection: is already connected")
+//            return
+//        }
+        if (isScanningOrConnecting) {
+            Log.d("BluetoothService", "initiateConnection: is already scanning or connecting")
             return
         }
 
@@ -35,6 +38,13 @@ class BluetoothService @Inject constructor(private val bluetoothManager: Bluetoo
         Log.d("BluetoothService", "bluetoothService: Starting device scan")
         bluetoothManager.scanForDevices { device ->
             Log.d("BluetoothService", "bluetoothService: Device found, attempting connection")
+            // Ensure device is bonded before connecting
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                return@scanForDevices
+            }
+            if (device.bondState != BluetoothDevice.BOND_BONDED) {
+                bluetoothManager.discoverAndBond()
+            }
             // Delay for 2 seconds after scanning has stopped before trying to connect
             Handler(Looper.getMainLooper()).postDelayed({
                 bluetoothManager.connectToDevice(device) {
@@ -61,6 +71,11 @@ class BluetoothService @Inject constructor(private val bluetoothManager: Bluetoo
         }
     }
 
+//    fun getConnectionState(): Boolean {
+//        val sharedPreferences = context.getSharedPreferences("BluetoothPreferences", Context.MODE_PRIVATE)
+//        return sharedPreferences.getBoolean("isConnected", false)
+//    }
+
     fun sendStopAlarm() {
         Log.d("BluetoothService", "isConnected = $isConnected")
         if (isConnected) {
@@ -75,8 +90,4 @@ class BluetoothService @Inject constructor(private val bluetoothManager: Bluetoo
         }
     }
 
-    fun disconnect() {
-        Log.d("BluetoothService", "disconnect: Disconnecting from device")
-        bluetoothManager.disconnectFromDevice()
-    }
 }

@@ -21,8 +21,8 @@ object DatabaseModule {
 
     @Singleton
     @Provides
-    fun provideBluetoothService(bluetoothManager: BluetoothManager): BluetoothService {
-        return BluetoothService(bluetoothManager)
+    fun provideBluetoothService(@ApplicationContext context: Context, bluetoothManager: BluetoothManager): BluetoothService {
+        return BluetoothService(context, bluetoothManager)
     }
 
     @Singleton
