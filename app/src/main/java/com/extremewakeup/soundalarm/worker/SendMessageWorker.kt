@@ -7,8 +7,8 @@ import androidx.annotation.RequiresApi
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.extremewakeup.soundalarm.bluetooth.BluetoothService
 import com.extremewakeup.soundalarm.repository.AlarmRepository
-import com.extremewakeup.soundalarm.bluetooth.BluetoothRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -18,7 +18,7 @@ class SendMessageWorker @Inject constructor(
     context: Context,
     params: WorkerParameters,
     private val alarmRepository: AlarmRepository,
-    private val bluetoothRepository: BluetoothRepository
+    private val bluetoothService: BluetoothService
 ) : CoroutineWorker(context, params) {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -33,7 +33,7 @@ class SendMessageWorker @Inject constructor(
             val alarm = alarmRepository.getAlarmById(alarmId)
             if (alarm != null) {
                 Log.d("SendMessageWorker", "Worker sending alarm to ESP32: $alarm")
-                bluetoothRepository.sendAlarmToESP32(alarm)
+                bluetoothService.sendAlarmData(alarm)
                 Result.success()
             } else {
                 Log.e("SendMessageWorker", "Alarm not found")

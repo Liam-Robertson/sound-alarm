@@ -18,11 +18,10 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import com.extremewakeup.soundalarm.model.Alarm
-import com.extremewakeup.soundalarm.model.AlarmTiming
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import java.util.TreeSet
 import java.util.UUID
 
 class BluetoothManager(private val context: Context) {
@@ -31,9 +30,27 @@ class BluetoothManager(private val context: Context) {
     private val serviceUUID: UUID = UUID.fromString("f261adff-f939-4446-82f9-2d00f4109dfe")
     private val characteristicUUID: UUID = UUID.fromString("a2932117-5297-476b-96f7-a873b1075803")
     private val foundDevices = mutableSetOf<String>()
-    private var retryCount = 0
-    private val maxRetries = 3 // Maximum number of retries
-    private val retryDelay = 2000L // Delay between retries in milliseconds
+
+    //    private var retryCount = 0
+//    private val maxRetries = 3 // Maximum number of retries
+//    private val retryDelay = 2000L // Delay between retries in milliseconds
+    var isConnected = false
+    val deviceAddress = "E8:6B:EA:E0:05:3E"
+//    val deviceAddress = "A8:42:E3:A8:72:B2"
+
+    // Notes:
+    // - There is a nasty bug where scanning doesn't detect ble device names, I'm using the device address as the identifier to get around this
+    // - Peripherals can only connect to one central at any given time in ble
+    // - I think the problem you're having is that you're not disconnecting properly which means that you're taking up the peripherals only connection slot
+
+    // To do list:
+    // - Fix the disconnect button (it should log disconnect on the esp32 side)
+    // - You need to stop scanning manually - either stop when you get a specific result or stop after a period of time
+    // - Add a filter to your scan
+    //
+    // Long term:
+    // - Add security
+
 
     init {
         val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -41,13 +58,7 @@ class BluetoothManager(private val context: Context) {
         Log.d("BluetoothManager", "BluetoothManager initialized")
     }
 
-//    private fun saveConnectionState(isConnected: Boolean) {
-//        val sharedPreferences = context.getSharedPreferences("BluetoothPreferences", Context.MODE_PRIVATE)
-//        sharedPreferences.edit().putBoolean("isConnected", isConnected).apply()
-//    }
-
     fun discoverAndBond() {
-        val deviceAddress = "E8:6B:EA:E0:05:3E"
         val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
         // Check if already bonded without starting discovery
@@ -61,11 +72,19 @@ class BluetoothManager(private val context: Context) {
             override fun onReceive(context: Context, intent: Intent) {
                 val action: String? = intent.action
                 if (BluetoothDevice.ACTION_FOUND == action) {
-                    val device: BluetoothDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)!!
+                    val device: BluetoothDevice =
+                        intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)!!
                     val foundAddress = device.address
                     if (foundAddress == deviceAddress) {
-                        Log.d("BluetoothManager", "Attempting to create bond with device: $foundAddress")
-                        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                        Log.d(
+                            "BluetoothManager",
+                            "Attempting to create bond with device: $foundAddress"
+                        )
+                        if (ActivityCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.BLUETOOTH_CONNECT
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) {
                             return
                         }
                         device.createBond()
@@ -79,7 +98,11 @@ class BluetoothManager(private val context: Context) {
         context.registerReceiver(receiver, filter)
 
         // Start discovery
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_SCAN
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
             // Handle permission request
             return
         }
@@ -87,69 +110,68 @@ class BluetoothManager(private val context: Context) {
         // Don't forget to unregister the receiver appropriately to avoid memory leaks
     }
 
-    fun scanForDevices(onDeviceFound: (BluetoothDevice) -> Unit) {
-        Log.d("BluetoothManager", "bluetoothManager: Checking bonded devices")
-        val bondedDevices = bluetoothAdapter?.bondedDevices
-        if (bondedDevices.isNullOrEmpty()) {
-            Log.d("BluetoothManager", "No bonded Bluetooth devices found.")
-        } else {
-            Log.d("BluetoothManager", "Bonded Bluetooth devices:")
-            for (device in bondedDevices) {
-                Log.d("BluetoothManager", "Device Name: ${device.name}, Address: ${device.address}")
+    fun scanAndConnect() {
+        Log.d("BluetoothService", "bluetoothService: Starting device scan")
+        scanForDevices { device ->
+            Log.d("BluetoothService", "bluetoothService: Device found, attempting connection")
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                return@scanForDevices
             }
-        }
-        val esp32Device = bondedDevices?.find { it.name == "ESP32_BLE_Server" }
-
-        if (esp32Device != null) {
-            Log.d("BluetoothManager", "ESP32_BLE_Server is already bonded")
-            onDeviceFound(esp32Device)
-        } else {
-            Log.d("BluetoothManager", "bluetoothManager: Starting device scan")
-            val leScanCallback = object : ScanCallback() {
-                override fun onScanResult(callbackType: Int, result: ScanResult?) {
-                    super.onScanResult(callbackType, result)
-                    result?.device?.let { device ->
-                        Log.d("BluetoothManager", "bluetoothManager: on scan result received")
-                        Log.d("BluetoothManager", "device name ${device.name}")
-                        Log.d("BluetoothManager", "device name ${device.address}")
-                        Log.d("BluetoothManager", "foundDevices $foundDevices")
-                        // I'm pretty confident that the esp32 stops advertising itself after it's connected to the android device
-                        // I need the esp32 to know if it's disconnected and to start advertising again (or to always be advertising)
-                        // I also feel like having foundDevices.add(device.address) in the if statement is causing issues
-                        // Bonding and connecting are two different processes in ble
-//                        if (device.name == "ESP32_BLE_Server" && foundDevices.add(device.address)) {
-                        if (device.name == "ESP32_BLE_Server") {
-                            Log.d("BluetoothManager", "foundDevices $foundDevices")
-                            Log.e("BluetoothManager", "FOUND")
-                            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-                                Log.e("BluetoothManager", "scanForDevices: BLUETOOTH_SCAN permissions not granted")
-                                return
-                            }
-                            Log.d("BluetoothManager", "scanForDevices: ESP32 device found, scanning stopped")
-                            bluetoothAdapter?.bluetoothLeScanner?.stopScan(this)
-                            onDeviceFound(device)
-                        }
-                    }
+            // Delay for 2 seconds after scanning has stopped before trying to connect
+            Handler(Looper.getMainLooper()).postDelayed({
+                connectToEsp32(device) {
+                    Log.d("BluetoothService", "bluetoothService: Device connected, ready for commands")
+                    return@connectToEsp32
                 }
-
-                override fun onScanFailed(errorCode: Int) {
-                    Log.e("BluetoothManager", "scanForDevices: Scan failed with error code: $errorCode")
-                }
-            }
-            foundDevices.clear()
-            bluetoothAdapter?.bluetoothLeScanner?.startScan(leScanCallback)
+            }, 2000)
         }
     }
 
+    fun scanForDevices(onDeviceFound: (BluetoothDevice) -> Unit) {
+        Log.d("BluetoothManager", "bluetoothManager: Starting device scan")
+        val foundDevices = TreeSet<BluetoothDevice>(compareBy { it.address })
+        val leScanCallback = object : ScanCallback() {
+            override fun onScanResult(callbackType: Int, result: ScanResult?) {
+                super.onScanResult(callbackType, result)
+                if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                    Log.e("BluetoothManager", "scanForDevices: BLUETOOTH_CONNECT permission not granted")
+                    return
+                }
+                result?.device?.let { device ->
+                    Log.d("BluetoothManager", "bluetoothManager: on scan result received")
+                    Log.d("BluetoothManager", "device name ${device.name}")
+                    Log.d("BluetoothManager", "device address ${device.address}")
+                    foundDevices.add(device) // Add device to the TreeSet using the specified comparator
+                }
+            }
 
-    fun connectToDevice(device: BluetoothDevice, onConnected: () -> Unit) {
+            override fun onScanFailed(errorCode: Int) {
+                Log.e("BluetoothManager", "scanForDevices: Scan failed with error code: $errorCode")
+            }
+        }
+
+        bluetoothAdapter?.bluetoothLeScanner?.startScan(leScanCallback)
+        Handler(Looper.getMainLooper()).postDelayed({
+            bluetoothAdapter?.bluetoothLeScanner?.stopScan(leScanCallback)
+            Log.d("BluetoothManager", "scanForDevices: Scanning stopped")
+            foundDevices.find { (it.address ?: "").contains("A8:42:E3:A8:72:B2") }?.let { device ->
+                Log.d("BluetoothManager", "FOUND ESP32_BLE_Server")
+                Thread.sleep(2000)
+                onDeviceFound(device)
+            }
+        }, 5000)
+    }
+
+
+    fun connectToEsp32(device: BluetoothDevice, onConnected: () -> Unit) {
         Log.d("BluetoothManager", "connectToDevice: Attempting to connect to device ${device.address}")
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
+        ) {
             Log.d("BluetoothManager", "BLUETOOTH_CONNECT permissions not granted")
             return
         }
 
-        bluetoothGatt = device.connectGatt(context, false, object : BluetoothGattCallback() {
+        bluetoothGatt = device.connectGatt(context, true, object : BluetoothGattCallback() {
             override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
                 if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                     Log.d("BluetoothManager", "BLUETOOTH_CONNECT permissions not granted")
@@ -158,53 +180,107 @@ class BluetoothManager(private val context: Context) {
                 when (newState) {
                     BluetoothProfile.STATE_CONNECTED -> {
                         Log.d("BluetoothManager", "connectToDevice: Connected to GATT server, starting service discovery")
+                        isConnected = true
+                        Thread.sleep(1000)
                         gatt?.discoverServices()
-//                        saveConnectionState(true)
-                        retryCount = 0 // Reset retry count on success
+                        Thread.sleep(1000)
                         onConnected()
                     }
                     BluetoothProfile.STATE_DISCONNECTED -> {
                         Log.e("BluetoothManager", "connectToDevice: Disconnected from GATT server")
-//                        saveConnectionState(false)
-                        if (retryCount < maxRetries) {
-                            retryCount++
-                            Log.d("BluetoothManager", "Attempt $retryCount to reconnect")
-                            Handler(Looper.getMainLooper()).postDelayed({
-                                connectToDevice(device, onConnected)
-                            }, retryDelay)
-                        } else {
-                            Log.e("BluetoothManager", "Max retries reached, giving up on connection.")
-                        }
+                        isConnected = false
                     }
                 }
             }
 
             override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Log.d("BluetoothManager", "connectToDevice: BLE services discovered, device ready for communication")
+                    Log.d(
+                        "BluetoothManager",
+                        "connectToDevice: BLE services discovered, device ready for communication"
+                    )
                 } else {
-                    Log.e("BluetoothManager", "connectToDevice: Service discovery failed with status: $status")
+                    Log.e(
+                        "BluetoothManager",
+                        "connectToDevice: Service discovery failed with status: $status"
+                    )
                 }
             }
         })
     }
 
-    fun sendAlarmDataToESP32(alarm: Alarm) {
+    fun stopPlayingAlarm() {
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.d("BluetoothManager", "BLUETOOTH_CONNECT permissions not granted")
+            return
+        }
+        Log.d("BluetoothManager", "stopPlayingAlarm: Sending command to stop alarm")
+        val service = bluetoothGatt?.getService(serviceUUID)
+        val characteristic = service?.getCharacteristic(characteristicUUID)
+        characteristic?.let {
+            val alarmData = Json.encodeToString(
+                MapSerializer(String.serializer(), String.serializer()),
+                mapOf("stopAlarm" to "true")
+            ).toByteArray(Charsets.UTF_8)
+            it.value = alarmData
+            val writeResult = bluetoothGatt?.writeCharacteristic(it)
+            Log.d(
+                "BluetoothManager",
+                "stopPlayingAlarm: Command ${if (writeResult == true) "sent successfully" else "failed to send"}"
+            )
+        }
+    }
+
+
+    fun initiateConnection(onConnected: () -> Unit) {
+        Log.d("BluetoothService", "bluetoothService: Starting device scan")
+        scanForDevices { device ->
+            Log.d("BluetoothService", "bluetoothService: Device found, attempting connection")
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                return@scanForDevices
+            }
+            // Delay for 2 seconds after scanning has stopped before trying to connect
+            Handler(Looper.getMainLooper()).postDelayed({
+                connectToEsp32(device) {
+                    Log.d("BluetoothService", "bluetoothService: Device connected, ready for commands")
+                    onConnected()
+                }
+            }, 2000)
+        }
+    }
+
+    fun sendMessageToEsp32(message: ByteArray) {
+        sendBluetoothMessage(message)
+//        if (isConnected) {
+//            Log.d("BluetoothManager", "sendMessageToEsp32: isConnected=true, sending message")
+//            sendBluetoothMessage(message)
+//        } else {
+//            Log.d("BluetoothManager", "sendMessageToEsp32: isConnected=false, starting connection")
+//            initiateConnection {
+//                sendBluetoothMessage(message)
+//            }
+//        }
+    }
+
+    fun sendBluetoothMessage(message: ByteArray) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             Log.d("BluetoothManager", "BLUETOOTH_CONNECT permissions not granted")
             return
         }
-        Log.d("BluetoothManager", "sendAlarmDataToESP32: Preparing to send alarm data")
+        Log.d("BluetoothManager", "sendMessageToEsp32: Preparing to send message")
         val service = bluetoothGatt?.getService(serviceUUID)
         val characteristic = service?.getCharacteristic(characteristicUUID)
+        Log.d("BluetoothManager", "BluetoothManager: characteristic: $characteristic")
         Log.d("BluetoothManager", "11111")
         characteristic?.let {
             Log.d("BluetoothManager", "2222")
-            val alarmData = Json.encodeToString(MapSerializer(String.serializer(), AlarmTiming.serializer()), mapOf("startAlarm" to AlarmTiming(time = alarm.time, volume = alarm.volume))).toByteArray(Charsets.UTF_8)
-            Log.d("BluetoothManager", "33333")
-            it.value = alarmData
+            it.value = message
             val writeResult = bluetoothGatt?.writeCharacteristic(it)
-            Log.d("BluetoothManager", "4444444")
+            Log.d("BluetoothManager", "33333")
             if (writeResult == true) {
                 Log.d("BluetoothManager", "sendAlarmDataToESP32: Sending data succeeded")
             } else {
@@ -213,29 +289,26 @@ class BluetoothManager(private val context: Context) {
         }
     }
 
-    fun stopPlayingAlarm() {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+    fun disconnectDevice() {
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
             Log.d("BluetoothManager", "BLUETOOTH_CONNECT permissions not granted")
             return
         }
-        Log.d("BluetoothManager", "stopPlayingAlarm: Sending command to stop alarm")
-        val service = bluetoothGatt?.getService(serviceUUID)
-        val characteristic = service?.getCharacteristic(characteristicUUID)
-        characteristic?.let {
-            val alarmData = Json.encodeToString(MapSerializer(String.serializer(), String.serializer()), mapOf("stopAlarm" to "true")).toByteArray(Charsets.UTF_8)
-            it.value = alarmData
-            val writeResult = bluetoothGatt?.writeCharacteristic(it)
-            Log.d("BluetoothManager", "stopPlayingAlarm: Command ${if (writeResult == true) "sent successfully" else "failed to send"}")
-        }
-    }
 
-    fun disconnectFromDevice() {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            Log.d("BluetoothManager", "BLUETOOTH_CONNECT permissions not granted")
-            return
-        }
-        Log.d("BluetoothManager", "disconnectFromDevice: Disconnecting and closing GATT")
-        bluetoothGatt?.close()
-        bluetoothGatt = null
+        Thread.sleep(2000)
+        bluetoothGatt?.let { gatt ->
+            Log.d("BluetoothManager", "disconnectDevice: Disconnecting from GATT server")
+            gatt.disconnect()
+            Thread.sleep(1000)
+            gatt.close()  // Properly close the GATT connection
+            bluetoothGatt = null  // Clear the reference to avoid memory leaks
+            isConnected = false
+            Log.d("BluetoothManager", "disconnectDevice: Disconnected and resources released")
+        } ?: Log.d("BluetoothManager", "disconnectDevice: No device connected")
     }
 }
+

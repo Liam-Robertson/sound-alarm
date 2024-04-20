@@ -11,7 +11,6 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.extremewakeup.soundalarm.bluetooth.BluetoothRepository
 import com.extremewakeup.soundalarm.viewmodel.MainViewModel
 import com.extremewakeup.soundalarm.ui.PermissionScreen
 

@@ -11,7 +11,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import com.extremewakeup.soundalarm.database.AppDatabase
 import com.extremewakeup.soundalarm.dao.AlarmDao
-import com.extremewakeup.soundalarm.bluetooth.BluetoothRepository
 import com.extremewakeup.soundalarm.bluetooth.BluetoothService
 import javax.inject.Singleton
 
@@ -21,14 +20,8 @@ object DatabaseModule {
 
     @Singleton
     @Provides
-    fun provideBluetoothService(@ApplicationContext context: Context, bluetoothManager: BluetoothManager): BluetoothService {
-        return BluetoothService(context, bluetoothManager)
-    }
-
-    @Singleton
-    @Provides
-    fun provideBluetoothRepository(bluetoothService: BluetoothService): BluetoothRepository {
-        return BluetoothRepository(bluetoothService)
+    fun provideBluetoothService(bluetoothManager: BluetoothManager): BluetoothService {
+        return BluetoothService(bluetoothManager)
     }
 
     @Singleton

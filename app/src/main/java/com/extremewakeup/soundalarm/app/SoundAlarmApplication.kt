@@ -7,8 +7,8 @@ import androidx.work.Configuration
 import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
+import com.extremewakeup.soundalarm.bluetooth.BluetoothService
 import com.extremewakeup.soundalarm.repository.AlarmRepository
-import com.extremewakeup.soundalarm.bluetooth.BluetoothRepository
 import com.extremewakeup.soundalarm.worker.SendMessageWorker
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
@@ -26,10 +26,10 @@ class SoundAlarmApplication : Application(), Configuration.Provider {
             .build()
 }
 
-class CustomWorkerFactory @Inject constructor(private val bluetoothRepository: BluetoothRepository, private val alarmRepository: AlarmRepository) : WorkerFactory() {
+class CustomWorkerFactory @Inject constructor(private val bluetoothService: BluetoothService, private val alarmRepository: AlarmRepository) : WorkerFactory() {
     override fun createWorker(
         appContext: Context,
         workerClassName: String,
         workerParameters: WorkerParameters
-    ): ListenableWorker = SendMessageWorker(appContext, workerParameters, alarmRepository, bluetoothRepository)
+    ): ListenableWorker = SendMessageWorker(appContext, workerParameters, alarmRepository, bluetoothService)
 }

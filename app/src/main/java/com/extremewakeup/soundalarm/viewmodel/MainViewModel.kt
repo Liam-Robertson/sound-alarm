@@ -19,22 +19,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
-import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.lifecycle.Observer
-import com.extremewakeup.soundalarm.bluetooth.BluetoothRepository
-import com.extremewakeup.soundalarm.navigation.AppNavigation
-import com.extremewakeup.soundalarm.viewmodel.MainViewModel
-import dagger.hilt.android.AndroidEntryPoint
+import com.extremewakeup.soundalarm.bluetooth.BluetoothService
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.time.LocalTime
-import java.util.UUID
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val alarmRepository: AlarmRepository,
-    private val bluetoothRepository: BluetoothRepository,
+    private val bluetoothService: BluetoothService,
     private val alarmManager: AlarmManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
@@ -53,6 +46,23 @@ class MainViewModel @Inject constructor(
 
     fun updateBluetoothPermissionStatus(isGranted: Boolean) {
         _bluetoothPermissionGranted.value = isGranted
+    }
+
+    fun bondToDevice() {
+        bluetoothService.bondWithDevice()
+    }
+
+    fun sendMessageToDevice() {
+        val daysActive = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+        bluetoothService.sendAlarmData(Alarm(id = 1,time = LocalTime.now(), daysActive = daysActive, volume = 5, isActive = true, userId = 2))
+    }
+
+    fun disconnectFromEsp32() {
+        bluetoothService.disconnectFromEsp32()
+    }
+
+    fun scanAndConnect() {
+        bluetoothService.scanAndConnect()
     }
 
     private val schedulingMutex = Mutex()
@@ -81,15 +91,6 @@ class MainViewModel @Inject constructor(
             true
         }
         _permissionGranted.value = isExactAlarmPermissionGranted && isBluetoothPermissionGranted && isBluetoothScanGranted && isFineLocationGranted
-    }
-
-    fun bondToDevice() {
-        bluetoothRepository.bondWithDevice()
-    }
-
-    fun sendMessageToDevice() {
-        val daysActive = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-        bluetoothRepository.sendAlarmToESP32(Alarm(id = 1,time = LocalTime.now(), daysActive = daysActive, volume = 5, isActive = true, userId = 2))
     }
 
     init {
@@ -154,7 +155,7 @@ class MainViewModel @Inject constructor(
     fun onQRCodeScanned(qrCode: String) {
         if (qrCode == "b9069d49-0956-4e34-b454-401044599906") {
             Log.d("QR Code Scanner", "Correct QR Code scanned")
-            bluetoothRepository.stopAlarmPlaying()
+            bluetoothService.sendStopAlarm()
         }
     }
 
