@@ -44,6 +44,7 @@ class BluetoothManager(private val context: Context) {
     // - I think the problem you're having is that you're not disconnecting properly which means that you're taking up the peripherals only connection slot
 
     // To do list:
+    // - Use the companion manager as per this talk - https://www.droidcon.com/2022/11/15/state-of-ble-on-android-in-2022/
     // - Fix the disconnect button (it should log disconnect on the esp32 side)
     // - You need to stop scanning manually - either stop when you get a specific result or stop after a period of time
     // - Add a filter to your scan
@@ -117,7 +118,6 @@ class BluetoothManager(private val context: Context) {
             if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                 return@scanForDevices
             }
-            // Delay for 2 seconds after scanning has stopped before trying to connect
             Handler(Looper.getMainLooper()).postDelayed({
                 connectToEsp32(device) {
                     Log.d("BluetoothService", "bluetoothService: Device connected, ready for commands")
@@ -155,11 +155,11 @@ class BluetoothManager(private val context: Context) {
             bluetoothAdapter?.bluetoothLeScanner?.stopScan(leScanCallback)
             Log.d("BluetoothManager", "scanForDevices: Scanning stopped")
             foundDevices.find { (it.address ?: "").contains("A8:42:E3:A8:72:B2") }?.let { device ->
-                Log.d("BluetoothManager", "FOUND ESP32_BLE_Server")
+                Log.e("BluetoothManager", "FOUND ESP32_BLE_Server")
                 Thread.sleep(2000)
                 onDeviceFound(device)
             }
-        }, 5000)
+        }, 2000)
     }
 
 

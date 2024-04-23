@@ -30,7 +30,7 @@ class BluetoothService @Inject constructor(
         bluetoothManager.sendMessageToEsp32(alarmData)
     }
 
-    fun sendStartAlarm(alarm: Alarm) {
+    fun sendStartAlarm() {
         Log.d("BluetoothService", "BluetoothService: Sending start alarm command")
         bluetoothManager.sendMessageToEsp32("startAlarm".toByteArray())
     }

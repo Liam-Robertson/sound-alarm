@@ -18,6 +18,7 @@ void AudioManager::init() {
 
 void AudioManager::playAlarm() {
     Serial.println("[AudioManager] Attempting to play alarm.");
+    delay(1000);
     if (mp3 && !mp3->isRunning()) {
         mp3->begin(file.get(), out.get());
         Serial.println("[AudioManager] Alarm is now playing.");
@@ -29,7 +30,9 @@ void AudioManager::playAlarm() {
 void AudioManager::stopAlarm() {
     if (mp3 && mp3->isRunning()) {
         Serial.println("[AudioManager] Stopping alarm.");
+        delay(1000);
         mp3->stop();
+        delay(1000);
         resetAudioResources();
         Serial.println("[AudioManager] Alarm stopped.");
     } else {
@@ -47,6 +50,7 @@ void AudioManager::resetAudioResources() {
 void AudioManager::loop() {
     if (mp3 && mp3->isRunning()) {
         if (!mp3->loop()) {
+            delay(1000);
             Serial.println("[AudioManager] MP3 playback ended.");
         }
     }

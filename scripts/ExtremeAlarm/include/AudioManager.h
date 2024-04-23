@@ -1,6 +1,4 @@
-#ifndef AudioManager_h
-#define AudioManager_h
-
+#pragma once
 #include <Arduino.h>
 
 class AudioManager {
@@ -14,5 +12,3 @@ public:
     static void resetAudioResources();
     static void stopAlarm();
 };
-
-#endif

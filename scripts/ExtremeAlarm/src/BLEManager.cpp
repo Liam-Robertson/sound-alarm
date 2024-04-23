@@ -1,6 +1,7 @@
 // BLEManager.cpp
 #include "BLEManager.h"
 #include <Arduino.h>
+#include "AudioManager.h"
 
 #define SERVICE_UUID        "f261adff-f939-4446-82f9-2d00f4109dfe"
 #define CHARACTERISTIC_UUID "a2932117-5297-476b-96f7-a873b1075803"
@@ -43,5 +44,12 @@ void BLEManager::CharacteristicCallbacks::onWrite(BLECharacteristic* pCharacteri
             Serial.print(c);
         }
         Serial.println();
+        if (rxValue == "startAlarm") {
+            AudioManager::playAlarm();
+        }
+        Serial.println();
+        if (rxValue == "stopAlarm") {
+            AudioManager::stopAlarm();
+        }
     }
 }

@@ -32,6 +32,10 @@ class MainViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
+    // To do list:
+    // - Split into one view model per screen
+
+
     private val _permissionGranted = MutableLiveData<Boolean>()
     val permissionGranted: LiveData<Boolean> = _permissionGranted
 
@@ -59,6 +63,14 @@ class MainViewModel @Inject constructor(
 
     fun disconnectFromEsp32() {
         bluetoothService.disconnectFromEsp32()
+    }
+
+    fun startAlarm() {
+        bluetoothService.sendStartAlarm()
+    }
+
+    fun stopAlarm() {
+        bluetoothService.sendStopAlarm()
     }
 
     fun scanAndConnect() {

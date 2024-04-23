@@ -109,7 +109,7 @@ fun AlarmScreen(navController: NavController, viewModel: MainViewModel, context:
             viewModel.scanAndConnect()
         },
             modifier = Modifier
-                .align(Alignment.CenterEnd)
+                .align(Alignment.TopEnd)
                 .padding(bottom = 16.dp)
         ) {
             androidx.compose.material.Text("Scan and connect")
@@ -122,10 +122,36 @@ fun AlarmScreen(navController: NavController, viewModel: MainViewModel, context:
             viewModel.sendMessageToDevice()
         },
             modifier = Modifier
-                .align(Alignment.Center)
+                .align(Alignment.CenterEnd)
                 .padding(bottom = 16.dp)
         ) {
             androidx.compose.material.Text("Send alarm to device")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(onClick = {
+            Log.d("PermissionScreen", "Start Alarm")
+            viewModel.startAlarm()
+        },
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(bottom = 16.dp)
+        ) {
+            androidx.compose.material.Text("Start Alarm")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(onClick = {
+            Log.d("PermissionScreen", "Stop Alarm")
+            viewModel.stopAlarm()
+        },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 16.dp)
+        ) {
+            androidx.compose.material.Text("Stop Alarm")
         }
 
         Spacer(modifier = Modifier.height(8.dp))

@@ -1,7 +1,4 @@
-// BLEManager.h
-#ifndef BLEMANAGER_H
-#define BLEMANAGER_H
-
+#pragma once
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEServer.h>
@@ -21,5 +18,3 @@ private:
         void onWrite(BLECharacteristic* pCharacteristic) override;
     };
 };
-
-#endif // BLEMANAGER_H

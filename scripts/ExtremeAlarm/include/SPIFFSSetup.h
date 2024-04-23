@@ -1,9 +1,6 @@
-#ifndef SPIFFSSetup_h
-#define SPIFFSSetup_h
+#pragma once
 
 class SPIFFSSetup {
 public:
     static void setupSPIFFS();
 };
-
-#endif
